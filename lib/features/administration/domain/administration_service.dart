@@ -21,9 +21,9 @@ class AdministrationService {
     required TourRepository tourRepository,
     required CourierRepository courierRepository,
     required UserRepository userRepository,
-  }) : _tourRepository = tourRepository,
-       _courierRepository = courierRepository,
-       _userRepository = userRepository;
+  })  : _tourRepository = tourRepository,
+        _courierRepository = courierRepository,
+        _userRepository = userRepository;
 
   final TourRepository _tourRepository;
   final CourierRepository _courierRepository;
@@ -42,7 +42,9 @@ class AdministrationService {
   /// premier.
   Future<List<Tour>> historiqueTournees() async {
     final tours = await _tourRepository.listAll();
-    final terminees = tours.where((t) => t.statut == TourStatus.terminee).toList()
+    final terminees = tours
+        .where((t) => t.statut == TourStatus.terminee)
+        .toList()
       ..sort((a, b) => b.dateCreation.compareTo(a.dateCreation));
     return terminees;
   }
@@ -51,6 +53,58 @@ class AdministrationService {
   /// récentes en premier.
   Future<List<CourierRequest>> toutesLesDemandes() {
     return _courierRepository.listAll();
+  }
+
+  /// [historiqueTournees], enrichi du nom du préparateur qui a réalisé
+  /// chaque tournée — pour l'écran "Historique" (analyse de vitesse), qui
+  /// affiche la durée réelle de picking (voir `Tour.dureeEcoulee`) à côté
+  /// de qui l'a faite, jamais un simple numéro isolé.
+  Future<List<({Tour tour, String preparateurNom})>>
+      historiqueAvecPreparateur() async {
+    final tours = await historiqueTournees();
+    if (tours.isEmpty) return const [];
+
+    final users = await _userRepository.listAll();
+    final nomParId = {for (final u in users) u.id: u.nomAffichage};
+
+    return [
+      for (final t in tours)
+        (tour: t, preparateurNom: nomParId[t.preparateurId] ?? 'Préparateur'),
+    ];
+  }
+
+  /// Durée moyenne de picking par préparateur — uniquement sur les
+  /// tournées clôturées dont la durée est connue (voir
+  /// `Tour.dureeEcoulee` : jamais calculée pour une tournée sans
+  /// dateDebut/dateFin, par exemple créée avant l'introduction de cette
+  /// mesure). Triée du préparateur le plus rapide en moyenne au plus
+  /// lent.
+  Future<List<({String preparateurNom, Duration dureeMoyenne, int nombreTournees})>>
+      moyennesVitesseParPreparateur() async {
+    final avecNom = await historiqueAvecPreparateur();
+
+    final dureesParPreparateur = <String, List<Duration>>{};
+    for (final entry in avecNom) {
+      final duree = entry.tour.dureeEcoulee;
+      if (duree == null) continue;
+      dureesParPreparateur.putIfAbsent(entry.preparateurNom, () => []).add(duree);
+    }
+
+    final resultats = [
+      for (final entry in dureesParPreparateur.entries)
+        (
+          preparateurNom: entry.key,
+          dureeMoyenne: Duration(
+            microseconds: entry.value
+                    .map((d) => d.inMicroseconds)
+                    .reduce((a, b) => a + b) ~/
+                entry.value.length,
+          ),
+          nombreTournees: entry.value.length,
+        ),
+    ]..sort((a, b) => a.dureeMoyenne.compareTo(b.dureeMoyenne));
+
+    return resultats;
   }
 
   /// Préparateurs actifs, pour le choix lors d'une réassignation.
@@ -72,11 +126,11 @@ class AdministrationService {
   }) async {
     final tour = await _tourRepository.findById(tourId);
     if (tour == null) {
-      return Result.failure(const ValidationException('Tournée introuvable.'));
+      return const Result.failure(ValidationException('Tournée introuvable.'));
     }
     if (tour.statut == TourStatus.terminee) {
-      return Result.failure(
-        const ValidationException(
+      return const Result.failure(
+        ValidationException(
           'Une tournée déjà terminée ne peut pas être réassignée.',
         ),
       );

@@ -201,6 +201,34 @@ void main() {
       final result = await service.startOrResume('tour-1');
       expect(result.isFailure, isTrue);
     });
+
+    test('le premier démarrage enregistre dateDebut', () async {
+      await service.downloadTour('tour-1');
+
+      final result = await service.startOrResume('tour-1');
+
+      result.when(
+        success: (tour) => expect(tour.dateDebut, isNotNull),
+        failure: (_) => fail('devrait réussir'),
+      );
+    });
+
+    test('une reprise ne modifie jamais dateDebut déjà enregistrée',
+        () async {
+      await service.downloadTour('tour-1');
+      final premier = await service.startOrResume('tour-1');
+      final dateDebutOriginale = premier.when(
+        success: (tour) => tour.dateDebut,
+        failure: (_) => fail('devrait réussir'),
+      );
+
+      final reprise = await service.startOrResume('tour-1');
+
+      reprise.when(
+        success: (tour) => expect(tour.dateDebut, dateDebutOriginale),
+        failure: (_) => fail('devrait réussir'),
+      );
+    });
   });
 
   group('TourService.completeTour — garde-fou structurel', () {
@@ -214,6 +242,41 @@ void main() {
       result.when(
         success: (_) => fail('ne devrait pas réussir'),
         failure: (exception) => expect(exception, isA<ValidationException>()),
+      );
+    });
+  });
+
+  group('TourService — mesure de la durée réelle de picking', () {
+    test('la clôture enregistre dateFin, et dureeEcoulee reflète le temps '
+        'écoulé depuis dateDebut', () async {
+      await service.downloadTour('tour-1');
+      await service.startOrResume('tour-1');
+      await repository.updateProgress(tourId: 'tour-1', produitsTraites: 2);
+
+      final result = await service.completeTour('tour-1');
+
+      result.when(
+        success: (tour) {
+          expect(tour.dateFin, isNotNull);
+          expect(tour.dureeEcoulee, isNotNull);
+          expect(tour.dureeEcoulee!.isNegative, isFalse);
+        },
+        failure: (_) => fail('devrait réussir'),
+      );
+    });
+
+    test('dureeEcoulee est nulle tant que la tournée n\'est pas clôturée',
+        () async {
+      final result = await service.downloadTour('tour-1');
+      result.when(
+        success: (tour) => expect(tour.dureeEcoulee, isNull),
+        failure: (_) => fail('devrait réussir'),
+      );
+
+      final started = await service.startOrResume('tour-1');
+      started.when(
+        success: (tour) => expect(tour.dureeEcoulee, isNull),
+        failure: (_) => fail('devrait réussir'),
       );
     });
   });

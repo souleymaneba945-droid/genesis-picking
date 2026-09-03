@@ -85,10 +85,16 @@ class FakeTourRepository implements TourRepository {
   Future<void> updateStatus({
     required String tourId,
     required TourStatus statut,
+    DateTime? dateDebut,
+    DateTime? dateFin,
   }) async {
     final tour = _tours[tourId];
     if (tour == null) return;
-    _tours[tourId] = tour.copyWith(statut: statut);
+    _tours[tourId] = tour.copyWith(
+      statut: statut,
+      dateDebut: dateDebut,
+      dateFin: dateFin,
+    );
   }
 
   @override

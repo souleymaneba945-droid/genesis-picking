@@ -22,6 +22,7 @@ class ProductImage extends StatelessWidget {
     this.width,
     this.placeholder,
     this.errorWidget,
+    this.filterQuality = FilterQuality.high,
   });
 
   final String imageUrl;
@@ -30,6 +31,14 @@ class ProductImage extends StatelessWidget {
   final double? width;
   final Widget Function(BuildContext, String)? placeholder;
   final Widget Function(BuildContext, String, Object)? errorWidget;
+
+  /// `FilterQuality.high` par défaut (au lieu du `.low` par défaut de
+  /// Flutter) : une vignette redimensionnée depuis la photo source, en
+  /// haute résolution (voir `pdf_photo_extractor.dart`, rendu à ~430 ppp),
+  /// a l'air nettement plus nette avec un meilleur filtre de
+  /// redimensionnement — coût CPU négligeable pour des images de cette
+  /// taille (03/09/2026, retour terrain : "la netteté est à revoir").
+  final FilterQuality filterQuality;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +49,7 @@ class ProductImage extends StatelessWidget {
         fit: fit,
         height: height,
         width: width,
+        filterQuality: filterQuality,
         errorBuilder: (context, error, stackTrace) =>
             errorWidget?.call(context, imageUrl, error) ??
             const SizedBox.shrink(),
@@ -53,6 +63,7 @@ class ProductImage extends StatelessWidget {
       fit: fit,
       height: height,
       width: width,
+      filterQuality: filterQuality,
       placeholder: placeholder,
       errorWidget: errorWidget,
     );

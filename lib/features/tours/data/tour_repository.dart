@@ -46,7 +46,17 @@ abstract interface class TourRepository {
 
   Future<int> countProductLines(String tourId);
 
-  Future<void> updateStatus({required String tourId, required TourStatus statut});
+  /// [dateDebut]/[dateFin], si fournies, sont enregistrées avec le
+  /// changement de statut — voir `TourService.startOrResume` (premier
+  /// démarrage) et `TourService.completeTour` (clôture). N'écrase jamais
+  /// une valeur déjà enregistrée avec `null` : un appelant qui ne les
+  /// fournit pas laisse les valeurs existantes intactes.
+  Future<void> updateStatus({
+    required String tourId,
+    required TourStatus statut,
+    DateTime? dateDebut,
+    DateTime? dateFin,
+  });
 
   /// Persiste le nombre de produits ayant un état final (Module 4).
   ///

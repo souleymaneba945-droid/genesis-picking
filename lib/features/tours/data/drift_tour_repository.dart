@@ -161,12 +161,18 @@ class DriftTourRepository implements TourRepository {
   Future<void> updateStatus({
     required String tourId,
     required TourStatus statut,
+    DateTime? dateDebut,
+    DateTime? dateFin,
   }) async {
     await (_database.update(
       _database.toursTable,
     )..where((tbl) => tbl.id.equals(tourId)))
         .write(
-      ToursTableCompanion(statut: Value(statut)),
+      ToursTableCompanion(
+        statut: Value(statut),
+        dateDebut: dateDebut == null ? const Value.absent() : Value(dateDebut),
+        dateFin: dateFin == null ? const Value.absent() : Value(dateFin),
+      ),
     );
     AppLogger.event('Tournée $tourId → statut $statut', tag: 'TourRepository');
   }
@@ -256,6 +262,8 @@ class DriftTourRepository implements TourRepository {
       nombreTotalProduits: row.nombreTotalProduits,
       produitsTraites: row.produitsTraites,
       dateSynchronisation: row.dateSynchronisation,
+      dateDebut: row.dateDebut,
+      dateFin: row.dateFin,
     );
   }
 }

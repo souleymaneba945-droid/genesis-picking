@@ -17,6 +17,8 @@ class Tour {
     required this.produitsTraites,
     this.dateTelechargement,
     this.dateSynchronisation,
+    this.dateDebut,
+    this.dateFin,
   });
 
   final String id;
@@ -30,7 +32,25 @@ class Tour {
   final int produitsTraites;
   final DateTime? dateSynchronisation;
 
+  /// Début réel du picking (premier "Commencer", jamais réécrit par une
+  /// reprise) — voir `ToursTable.dateDebut`.
+  final DateTime? dateDebut;
+
+  /// Fin réelle du picking (clôture) — voir `ToursTable.dateFin`.
+  final DateTime? dateFin;
+
   bool get estTeleChargeeLocalement => dateTelechargement != null;
+
+  /// Durée réelle du picking — `null` tant que la tournée n'est pas
+  /// clôturée (ou n'a jamais été commencée). Jamais recalculée à partir
+  /// de l'heure courante : une fois [dateFin] connue, cette durée est
+  /// figée, comme il se doit pour une mesure d'historique.
+  Duration? get dureeEcoulee {
+    final debut = dateDebut;
+    final fin = dateFin;
+    if (debut == null || fin == null) return null;
+    return fin.difference(debut);
+  }
 
   Tour copyWith({
     DateTime? dateTelechargement,
@@ -38,6 +58,8 @@ class Tour {
     TourSyncState? etatSynchronisation,
     int? produitsTraites,
     DateTime? dateSynchronisation,
+    DateTime? dateDebut,
+    DateTime? dateFin,
   }) {
     return Tour(
       id: id,
@@ -50,6 +72,8 @@ class Tour {
       nombreTotalProduits: nombreTotalProduits,
       produitsTraites: produitsTraites ?? this.produitsTraites,
       dateSynchronisation: dateSynchronisation ?? this.dateSynchronisation,
+      dateDebut: dateDebut ?? this.dateDebut,
+      dateFin: dateFin ?? this.dateFin,
     );
   }
 }

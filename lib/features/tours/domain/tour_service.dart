@@ -237,15 +237,23 @@ class TourService {
           ),
         );
       case TourStatus.telechargee:
+        // dateDebut : premier passage à "En cours" seulement — c'est ce
+        // qui rend la mesure de durée (voir `Tour.dureeEcoulee`) fiable :
+        // une reprise (cas `TourStatus.enCours` ci-dessous) ne la touche
+        // jamais.
+        final debut = DateTime.now();
         await _repository.updateStatus(
           tourId: tourId,
           statut: TourStatus.enCours,
+          dateDebut: debut,
         );
         await _syncQueue.enqueue(
           eventType: TourSyncEventTypes.tourneeDebutee,
           payload: jsonEncode({'tourId': tourId}),
         );
-        return Result.success(tour.copyWith(statut: TourStatus.enCours));
+        return Result.success(
+          tour.copyWith(statut: TourStatus.enCours, dateDebut: debut),
+        );
       case TourStatus.enCours:
         // Reprise : rien à modifier, la progression existante est déjà
         // celle à laquelle le préparateur doit revenir.
@@ -278,12 +286,19 @@ class TourService {
       );
     }
 
-    await _repository.updateStatus(tourId: tourId, statut: TourStatus.terminee);
+    final fin = DateTime.now();
+    await _repository.updateStatus(
+      tourId: tourId,
+      statut: TourStatus.terminee,
+      dateFin: fin,
+    );
     await _syncQueue.enqueue(
       eventType: TourSyncEventTypes.tourneeTerminee,
       payload: jsonEncode({'tourId': tourId}),
     );
-    return Result.success(tour.copyWith(statut: TourStatus.terminee));
+    return Result.success(
+      tour.copyWith(statut: TourStatus.terminee, dateFin: fin),
+    );
   }
 
   /// Supprime définitivement une tournée — pour corriger un import

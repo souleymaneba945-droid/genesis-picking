@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genesis_picking/core/activity/activity_log.dart';
 import 'package:genesis_picking/core/activity/drift_activity_log_repository.dart';
+import 'package:genesis_picking/core/notifications/local_notification_service.dart';
 import 'package:genesis_picking/core/session/session_manager.dart';
 import 'package:genesis_picking/core/session/user_session.dart';
 import 'package:genesis_picking/core/storage/local_database.dart';
@@ -24,6 +25,18 @@ final localDatabaseProvider = Provider<LocalDatabase>((ref) {
 
 final syncQueueProvider = Provider<SyncQueue>((ref) {
   return SyncQueue(ref.watch(localDatabaseProvider));
+});
+
+/// Instance unique de [LocalNotificationService] pour toute la durée de vie
+/// de l'application — voir `core/notifications/`. Consommé pour l'instant
+/// uniquement côté coursier (`CourierNotificationWatcher`), mais placé ici
+/// (plutôt que dans `courier_providers.dart`) car le service lui-même n'a
+/// aucune dépendance vers `features/` : rien n'empêche un autre rôle de s'en
+/// servir plus tard.
+final localNotificationServiceProvider = Provider<LocalNotificationService>((
+  ref,
+) {
+  return LocalNotificationService();
 });
 
 /// Historique d'activité (picking + coursier) — voir `core/activity/`.
