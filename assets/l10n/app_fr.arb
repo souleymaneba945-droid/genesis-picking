@@ -1,0 +1,12 @@
+{
+  "@@locale": "fr",
+  "appName": "GENESIS PICKING",
+  "@appName": {"description": "Nom de l'application, affiché sur l'écran de connexion."},
+
+  "genericLoading": "Chargement...",
+  "noTourneeAvailable": "Aucune tournée pour le moment.",
+  "errorInvalidCredentials": "Identifiant ou mot de passe incorrect.",
+  "errorAccountDisabled": "Ce compte n'est plus actif. Contactez votre administrateur.",
+  "errorGeneric": "Une erreur est survenue. Vos données sont conservées. Réessayez.",
+  "offlineNotice": "Pas de connexion. Votre travail est enregistré et sera transmis automatiquement."
+}

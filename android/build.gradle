@@ -1,0 +1,43 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+// Certains plugins (ex. file_picker 8.x) embarquent encore un module Android
+// compilé contre une API plus ancienne que celle exigée par leurs propres
+// dépendances transitives (flutter_plugin_android_lifecycle, androidx.core
+// récents, etc.) — sans dépendre de leur mise à jour (souvent une montée de
+// version majeure, hors sujet ici), on aligne tous les modules Android du
+// build (y compris les plugins tiers) sur la même compileSdk que l'appli.
+// Doit s'exécuter APRÈS le script du plugin lui-même (ex. file_picker fixe
+// `compileSdk 34` dans son propre build.gradle) — d'où `afterEvaluate`,
+// avec un repli synchrone pour les sous-projets déjà évalués à ce stade
+// (`evaluationDependsOn(":app")` juste au-dessus évalue `:app` par
+// anticipation, ce qui fait planter un `afterEvaluate` tardif dessus).
+subprojects { subproject ->
+    if (subproject.name == "app") return
+    def applyCompileSdkOverride = {
+        if (subproject.hasProperty("android")) {
+            subproject.android.compileSdk = 36
+        }
+    }
+    if (subproject.state.executed) {
+        applyCompileSdkOverride()
+    } else {
+        subproject.afterEvaluate { applyCompileSdkOverride() }
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// GENESIS PICKING — règles Firestore.
+//
+// Aucune authentification Firebase n'est utilisée ici (voir main.dart) :
+// la connexion des comptes reste 100% locale/hors-ligne (mot de passe
+// haché, vérifié sur l'appareil, jamais envoyé au serveur — voir
+// SyncingUserRepository). Firestore ne sert donc que de relais de
+// synchronisation entre appareils d'une même petite équipe interne.
+//
+// Limitation connue et assumée pour l'instant (pas de vrai contrôle
+// d'accès côté serveur) : n'importe qui connaissant la configuration du
+// projet peut lire/écrire ces collections. Acceptable pour un usage
+// interne à une équipe de confiance, à durcir avant toute ouverture plus
+// large (ex. Firebase App Check, ou une authentification Firebase dédiée
+// à la synchronisation uniquement, sans changer la connexion locale).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /tours/{tourId} {
+      allow read, write: if true;
+    }
+    match /tour_product_lines/{lineId} {
+      allow read, write: if true;
+    }
+    match /courier_requests/{requestId} {
+      allow read, write: if true;
+    }
+  }
+}

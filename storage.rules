@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// GENESIS PICKING — règles Firebase Storage (photos produit).
+// Même limitation assumée que firestore.rules : pas d'authentification
+// Firebase, accès ouvert à qui connaît la configuration du projet.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /product_photos/{tourId}/{fileName} {
+      allow read, write: if true;
+    }
+  }
+}

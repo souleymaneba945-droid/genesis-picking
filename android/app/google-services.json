@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1059425301039",
+    "project_id": "genesis-picking-univers",
+    "storage_bucket": "genesis-picking-univers.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059425301039:android:c9a1c571b820b111d24cda",
+        "android_client_info": {
+          "package_name": "com.genesispicking.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdwkHwXkz11Nox5ExAhgYDrO5HF1CWkcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

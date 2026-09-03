@@ -1,0 +1,106 @@
+name: genesis_picking
+description: >
+  GENESIS PICKING — Assistant de préparation de commandes pour
+  Univers Parapharmacie (Dakar). Authentification par rôle, gestion des
+  tournées, moteur de picking hors-ligne, produits introuvables et
+  coursiers, synchronisation, administration, import des picking lists.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Navigation déclarative, adaptée à une app multi-rôles avec redirections
+  go_router: ^14.2.0
+
+  # Gestion d'état — choisi pour sa testabilité et sa séparation claire
+  # entre logique métier (providers) et interface (widgets)
+  flutter_riverpod: ^2.5.1
+
+  # Base de données locale (offline-first) — typée, migrations gérées,
+  # requêtes réactives (streams) qui rafraîchissent l'UI automatiquement
+  drift: 2.34.0
+  drift_flutter: ^0.3.1
+
+  # Stockage sécurisé de la session (jeton, rôle en cache)
+  flutter_secure_storage: ^9.2.2
+
+  # Détection de l'état réseau — nécessaire au mode Offline First
+  connectivity_plus: ^6.0.5
+
+  # Génération d'identifiants uniques pour les événements de synchronisation
+  uuid: ^4.4.2
+
+  # Hachage des mots de passe (Module 2 — Authentification)
+  crypto: ^3.0.5
+
+  # Moteur d'import des picking lists (voir Directive dédiée)
+  csv: ^6.0.0
+  excel: ^4.0.6
+  # Extraction de texte PDF — licence communautaire gratuite pour les
+  # petites structures ; à réévaluer si l'usage commercial dépasse les
+  # seuils de cette licence (voir MODULE_IMPORT.md, section dépendances).
+  # N'extrait AUCUNE image d'un PDF existant (aucune version ne l'a jamais
+  # fait, vérifié sur le changelog complet) : voir pdfrx ci-dessous.
+  syncfusion_flutter_pdf: ^33.2.13
+  # Rendu de page PDF (moteur pdfium, multiplateforme y compris Web/WASM)
+  # — seul moyen de récupérer la photo produit d'une picking list PDF,
+  # `syncfusion_flutter_pdf` n'exposant aucune extraction d'image. Rend la
+  # zone de la page correspondant à chaque ligne produit (position réelle,
+  # jamais une image devinée) ; voir `pdf_photo_extractor.dart`.
+  pdfrx: ^2.4.5
+  # Encodage JPEG des photos produit rendues par pdfrx.
+  image: ^4.3.0
+  # Sélection de fichier côté Administrateur pour l'écran d'import
+  file_picker: ^8.1.2
+  # Glisser-déposer le fichier de picking list directement sur l'écran
+  # d'import (Refonte UI) — alimente le même ImportEngine que file_picker,
+  # juste une seconde façon de fournir les octets du fichier.
+  desktop_drop: ^0.8.0
+
+  # Journalisation structurée (remplace print() dans tout le projet)
+  logger: ^2.4.0
+
+  # Cache disque des images produit — permet leur affichage hors ligne
+  # une fois vues au moins une fois en ligne (Picking, principe Offline
+  # First : le picking ne doit jamais dépendre du réseau).
+  cached_network_image: ^3.4.1
+  firebase_core: ^4.14.0
+  cloud_firestore: ^6.9.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  drift_dev: 2.34.0
+  build_runner: ^2.4.11
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/l10n/
+    - assets/icon/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 23
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#0B3D91"
+  image: assets/icon/icon.png
+  android_12:
+    color: "#0B3D91"
+    image: assets/icon/icon.png
+  android: true
+  ios: true

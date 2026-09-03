@@ -1,0 +1,14 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_print # tout passe par AppLogger, jamais par print()
+    - prefer_single_quotes
+    - sort_child_properties_last
+    - unnecessary_this
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"

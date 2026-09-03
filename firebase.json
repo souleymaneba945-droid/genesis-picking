@@ -1,0 +1,28 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "genesis-picking-univers",
+          "appId": "1:1059425301039:android:c9a1c571b820b111d24cda",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "genesis-picking-univers",
+          "configurations": {
+            "android": "1:1059425301039:android:c9a1c571b820b111d24cda",
+            "windows": "1:1059425301039:web:ab5f70511894cc5dd24cda"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
