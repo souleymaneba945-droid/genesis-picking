@@ -16,7 +16,7 @@ class DatabaseSeeder {
   final UserRepository _userRepository;
 
   static const String defaultIdentifiant = 'admin';
-  static const String defaultMotDePasse = 'GenesisPicking2026!';
+  static const String defaultMotDePasse = 'PremiereConnexion-9K2m!Qz';
 
   Future<void> seedIfNeeded() async {
     final isEmpty = await _userRepository.isEmpty();
