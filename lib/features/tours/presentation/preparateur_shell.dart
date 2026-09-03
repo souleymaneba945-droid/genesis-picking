@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:genesis_picking/core/widgets/layout/role_shell.dart';
 import 'package:genesis_picking/features/courier/presentation/my_courier_requests_screen.dart';
-import 'package:genesis_picking/features/profile/presentation/profile_screen.dart';
+import 'package:genesis_picking/features/settings/presentation/settings_screen.dart';
 import 'package:genesis_picking/features/tours/presentation/my_tours_screen.dart';
 import 'package:genesis_picking/features/tours/presentation/preparateur_home_tab.dart';
 
@@ -39,7 +39,7 @@ class PreparateurShell extends StatelessWidget {
           icon: Icons.person_outline,
           selectedIcon: Icons.person,
           label: 'Profil',
-          child: ProfileScreen(),
+          child: SettingsScreen(),
         ),
       ],
     );

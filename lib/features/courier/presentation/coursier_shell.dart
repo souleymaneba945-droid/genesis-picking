@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genesis_picking/core/widgets/layout/role_shell.dart';
 import 'package:genesis_picking/features/courier/presentation/courier_home_screen.dart';
 import 'package:genesis_picking/features/courier/presentation/coursier_home_tab.dart';
-import 'package:genesis_picking/features/profile/presentation/profile_screen.dart';
+import 'package:genesis_picking/features/settings/presentation/settings_screen.dart';
 
 /// Point d'entrée du rôle Coursier (Refonte UI) — remplace
 /// `CourierHomeScreen` comme accueil de route (`AppRoutes.homeCoursier`).
@@ -37,7 +37,7 @@ class CoursierShell extends StatelessWidget {
           icon: Icons.person_outline,
           selectedIcon: Icons.person,
           label: 'Profil',
-          child: ProfileScreen(),
+          child: SettingsScreen(),
         ),
       ],
     );

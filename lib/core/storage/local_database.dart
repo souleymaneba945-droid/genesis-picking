@@ -67,8 +67,10 @@ class LocalDatabase extends _$LocalDatabase implements LocalStorageService {
   // Instantané produit (nom/description/photo) sur CourierRequestsTable →
   // schéma 9 : corrige l'absence d'image/description sur l'appareil d'un
   // coursier qui n'a jamais téléchargé la tournée (voir `CourierService`).
+  // Colonnes dateDebut/dateFin sur ToursTable → schéma 10 : mesure de la
+  // durée réelle de picking (voir `Tour.dureeEcoulee`).
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -116,6 +118,10 @@ class LocalDatabase extends _$LocalDatabase implements LocalStorageService {
               courierRequestsTable,
               courierRequestsTable.produitImageUrl,
             );
+          }
+          if (from < 10) {
+            await migrator.addColumn(toursTable, toursTable.dateDebut);
+            await migrator.addColumn(toursTable, toursTable.dateFin);
           }
         },
       );

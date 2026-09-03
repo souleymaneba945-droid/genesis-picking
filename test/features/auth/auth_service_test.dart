@@ -1,8 +1,12 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genesis_picking/core/errors/app_exception.dart';
 import 'package:genesis_picking/core/session/user_role.dart';
 import 'package:genesis_picking/features/auth/data/auth_service.dart';
 import 'package:genesis_picking/features/auth/data/login_attempt_tracker.dart';
+import 'package:genesis_picking/features/auth/data/password_hasher.dart';
 
 import 'fake_user_repository.dart';
 
@@ -118,6 +122,77 @@ void main() {
           expect(exception.message, isNot(contains('Trop de tentatives')));
         },
       );
+    });
+  });
+
+  group('AuthService.login — renforcement transparent du hachage', () {
+    // Reproduit un compte tel qu'il existerait AVANT le renforcement du
+    // 03/09/2026 (hash SHA-256 simple, sans préfixe) — via
+    // `upsertFromRemote`, qui écrit le hash/sel tels quels, exactement
+    // comme le ferait une synchronisation Firestore d'un compte ancien.
+    Future<void> seedCompteAncienFormat({
+      required String identifiant,
+      required String motDePasse,
+    }) async {
+      final salt = PasswordHasher.generateSalt();
+      final legacyHash =
+          sha256.convert(utf8.encode('$salt:$motDePasse')).toString();
+      await repository.upsertFromRemote(
+        id: identifiant,
+        identifiant: identifiant,
+        nomAffichage: 'Ancien Compte',
+        role: UserRole.preparateur,
+        actif: true,
+        motDePasseHash: legacyHash,
+        motDePasseSel: salt,
+        creeLe: DateTime.now(),
+      );
+    }
+
+    test('une connexion réussie sur un compte ancien format renforce son hash',
+        () async {
+      await seedCompteAncienFormat(
+        identifiant: 'ancien1',
+        motDePasse: 'MotDePasse123',
+      );
+      final avant = await repository.credentialsFor('ancien1');
+      expect(PasswordHasher.necessiteRehachage(avant!.hash), isTrue);
+
+      final result = await authService.login(
+        identifiant: 'ancien1',
+        motDePasse: 'MotDePasse123',
+      );
+      expect(result.isSuccess, isTrue);
+
+      final apres = await repository.credentialsFor('ancien1');
+      expect(PasswordHasher.necessiteRehachage(apres!.hash), isFalse);
+    });
+
+    test('le compte renforcé reste utilisable à la connexion suivante',
+        () async {
+      await seedCompteAncienFormat(
+        identifiant: 'ancien2',
+        motDePasse: 'MotDePasse123',
+      );
+      await authService.login(identifiant: 'ancien2', motDePasse: 'MotDePasse123');
+
+      final second = await authService.login(
+        identifiant: 'ancien2',
+        motDePasse: 'MotDePasse123',
+      );
+      expect(second.isSuccess, isTrue);
+    });
+
+    test('un compte déjà au format actuel n\'est jamais re-haché inutilement',
+        () async {
+      // 'prep1' (créé dans setUp via .create()) est déjà au format actuel.
+      final avant = await repository.credentialsFor('prep1');
+
+      await authService.login(identifiant: 'prep1', motDePasse: 'MotDePasse123');
+
+      final apres = await repository.credentialsFor('prep1');
+      expect(apres!.hash, avant!.hash);
+      expect(apres.sel, avant.sel);
     });
   });
 }

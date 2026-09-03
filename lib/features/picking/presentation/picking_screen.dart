@@ -8,6 +8,7 @@ import 'package:genesis_picking/core/widgets/feedback/app_snackbar.dart';
 import 'package:genesis_picking/features/courier/presentation/widgets/courier_quick_picker_sheet.dart';
 import 'package:genesis_picking/features/picking/data/picking_product.dart';
 import 'package:genesis_picking/features/picking/presentation/picking_controller.dart';
+import 'package:genesis_picking/features/picking/presentation/widgets/live_duration_chip.dart';
 import 'package:genesis_picking/features/picking/presentation/widgets/picking_product_row.dart';
 import 'package:genesis_picking/features/picking/presentation/widgets/progress_bar.dart';
 import 'package:genesis_picking/features/picking/presentation/widgets/tour_complete_view.dart';
@@ -28,9 +29,18 @@ class PickingScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncSession = ref.watch(pickingControllerProvider(tourId));
+    final dateDebut = asyncSession.valueOrNull?.tour.dateDebut;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Picking')),
+      appBar: AppBar(
+        title: const Text('Picking'),
+        actions: [
+          if (dateDebut != null) ...[
+            LiveDurationChip(depuis: dateDebut),
+            const SizedBox(width: AppDimensions.spacingMd),
+          ],
+        ],
+      ),
       body: asyncSession.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(

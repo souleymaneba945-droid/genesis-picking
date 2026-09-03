@@ -12,6 +12,12 @@ import 'package:genesis_picking/features/picking/data/product_state.dart';
 /// suffisamment grande pour vraiment reconnaître le produit d'un coup
 /// d'œil (Refonte UI — les photos sont maintenant réellement extraites
 /// du PDF, pas de raison de les afficher minuscules).
+///
+/// Vignette agrandie et boutons d'action passés en colonne verticale
+/// (03/09/2026, retour terrain) : trois boutons côte à côte prenaient
+/// beaucoup de largeur pour peu de hauteur — les empiler verticalement
+/// libère cette largeur pour une photo bien plus grande, sans allonger la
+/// ligne au-delà de ce que les boutons empilés occupent déjà en hauteur.
 class PickingProductRow extends StatelessWidget {
   const PickingProductRow({
     required this.produit,
@@ -48,7 +54,9 @@ class PickingProductRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            ProductThumbnail(imageUrl: produit.imageUrl),
+            Center(
+              child: ProductThumbnail(imageUrl: produit.imageUrl, taille: 88),
+            ),
             const SizedBox(width: AppDimensions.spacingSm),
             SizedBox(
               width: 20,
@@ -125,7 +133,10 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    // Empilés verticalement (voir la docstring de PickingProductRow) —
+    // même taille de bouton qu'avant (34, confortable au doigt), plus
+    // large marge horizontale libérée pour la vignette agrandie.
+    return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _RowButton(
@@ -135,7 +146,7 @@ class _ActionButtons extends StatelessWidget {
           onPressed: onIntrouvable,
           taille: 34,
         ),
-        const SizedBox(width: 5),
+        const SizedBox(height: 4),
         _RowButton(
           icon: Icons.local_shipping_outlined,
           color: Colors.white,
@@ -143,7 +154,7 @@ class _ActionButtons extends StatelessWidget {
           onPressed: onEnvoyerCoursier,
           taille: 34,
         ),
-        const SizedBox(width: 5),
+        const SizedBox(height: 4),
         _RowButton(
           icon: Icons.check,
           color: Colors.white,

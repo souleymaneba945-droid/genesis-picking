@@ -41,6 +41,19 @@ class ToursTable extends Table {
 
   DateTimeColumn get dateSynchronisation => dateTime().nullable()();
 
+  /// Début RÉEL du picking (premier passage à `enCours`, voir
+  /// `TourService.startOrResume`) — distinct de [dateTelechargement] : un
+  /// préparateur peut télécharger une tournée bien avant de commencer à
+  /// la préparer. Jamais réécrit lors d'une reprise (fermer puis rouvrir
+  /// l'appli en cours de route), pour que la durée mesurée reste le vrai
+  /// temps de travail, pas le temps entre deux ouvertures d'écran.
+  DateTimeColumn get dateDebut => dateTime().nullable()();
+
+  /// Fin réelle du picking (passage à `terminee`, voir
+  /// `TourService.completeTour`) — avec [dateDebut], permet de mesurer la
+  /// durée effective d'une tournée (voir `Tour.dureeEcoulee`).
+  DateTimeColumn get dateFin => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

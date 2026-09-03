@@ -24,9 +24,9 @@ class AuthService {
     required UserRepository userRepository,
     LoginAttemptTracker? attemptTracker,
     Uuid? uuid,
-  }) : _userRepository = userRepository,
-       _attemptTracker = attemptTracker ?? LoginAttemptTracker(),
-       _uuid = uuid ?? const Uuid();
+  })  : _userRepository = userRepository,
+        _attemptTracker = attemptTracker ?? LoginAttemptTracker(),
+        _uuid = uuid ?? const Uuid();
 
   final UserRepository _userRepository;
   final LoginAttemptTracker _attemptTracker;
@@ -58,8 +58,8 @@ class AuthService {
         'Échec de connexion (identifiant inconnu) : $identifiant',
         tag: 'AuthService',
       );
-      return Result.failure(
-        const SessionException('Identifiant ou mot de passe incorrect.'),
+      return const Result.failure(
+        SessionException('Identifiant ou mot de passe incorrect.'),
       );
     }
 
@@ -70,8 +70,8 @@ class AuthService {
         'Connexion refusée (compte désactivé) : $identifiant',
         tag: 'AuthService',
       );
-      return Result.failure(
-        const SessionException(
+      return const Result.failure(
+        SessionException(
           'Ce compte n\'est plus actif. Contactez votre administrateur.',
         ),
       );
@@ -89,13 +89,41 @@ class AuthService {
         'Échec de connexion (mot de passe incorrect) : $identifiant',
         tag: 'AuthService',
       );
-      return Result.failure(
-        const SessionException('Identifiant ou mot de passe incorrect.'),
+      return const Result.failure(
+        SessionException('Identifiant ou mot de passe incorrect.'),
       );
     }
 
     _attemptTracker.reset(identifiant);
     AppLogger.event('Connexion réussie : $identifiant', tag: 'AuthService');
+
+    // Migration transparente du hachage (voir la docstring de
+    // `PasswordHasher`) : ce compte vérifie encore avec l'ancien format
+    // (SHA-256 simple) — on connaît le mot de passe en clair À CET
+    // INSTANT PRÉCIS (on vient de le vérifier), c'est la seule occasion
+    // de le re-hacher sans rien demander à l'utilisateur. Best-effort :
+    // un échec ici ne doit jamais faire échouer une connexion par
+    // ailleurs réussie, seulement retenter à la prochaine connexion.
+    if (PasswordHasher.necessiteRehachage(credentials.hash)) {
+      try {
+        await _userRepository.resetPassword(
+          userId: account.id,
+          nouveauMotDePasse: motDePasse,
+        );
+        AppLogger.event(
+          'Hachage renforcé pour le compte $identifiant',
+          tag: 'AuthService',
+        );
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          'Renforcement du hachage différé pour $identifiant (retentera '
+          'à la prochaine connexion)',
+          tag: 'AuthService',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
 
     return Result.success(
       UserSession(

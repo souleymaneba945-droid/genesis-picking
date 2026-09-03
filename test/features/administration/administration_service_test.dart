@@ -132,4 +132,82 @@ void main() {
       expect(demandes, hasLength(2));
     });
   });
+
+  group('AdministrationService — analyse de vitesse de picking', () {
+    test('historiqueAvecPreparateur associe chaque tournée au bon nom',
+        () async {
+      final historique = await service.historiqueAvecPreparateur();
+
+      expect(historique, hasLength(1));
+      expect(historique.single.tour.id, 'tour-2');
+      expect(historique.single.preparateurNom, 'Amadou');
+    });
+
+    test(
+        'moyennesVitesseParPreparateur ignore les tournées sans durée '
+        'connue (dateDebut/dateFin absentes)', () async {
+      // 'tour-2' (seule tournée terminée) n'a ni dateDebut ni dateFin
+      // dans le setUp — aucune durée à moyenner.
+      final moyennes = await service.moyennesVitesseParPreparateur();
+      expect(moyennes, isEmpty);
+    });
+
+    test(
+        'moyennesVitesseParPreparateur calcule correctement une moyenne '
+        'sur plusieurs tournées du même préparateur', () async {
+      final debut = DateTime(2026, 1, 1, 8);
+      await tourRepository.registerAvailableTour(
+        tourId: 'tour-3',
+        numeroTournee: 'T-0003',
+        preparateurId: 'prep1',
+      );
+      // 10 minutes.
+      await tourRepository.updateStatus(
+        tourId: 'tour-2',
+        statut: TourStatus.terminee,
+        dateDebut: debut,
+        dateFin: debut.add(const Duration(minutes: 10)),
+      );
+      // 20 minutes.
+      await tourRepository.updateStatus(
+        tourId: 'tour-3',
+        statut: TourStatus.terminee,
+        dateDebut: debut,
+        dateFin: debut.add(const Duration(minutes: 20)),
+      );
+
+      final moyennes = await service.moyennesVitesseParPreparateur();
+
+      expect(moyennes, hasLength(1));
+      expect(moyennes.single.preparateurNom, 'Amadou');
+      expect(moyennes.single.nombreTournees, 2);
+      expect(moyennes.single.dureeMoyenne, const Duration(minutes: 15));
+    });
+
+    test('trie les préparateurs du plus rapide au plus lent en moyenne',
+        () async {
+      final debut = DateTime(2026, 1, 1, 8);
+      await tourRepository.registerAvailableTour(
+        tourId: 'tour-lente',
+        numeroTournee: 'T-LENTE',
+        preparateurId: 'prep2',
+      );
+      await tourRepository.updateStatus(
+        tourId: 'tour-2', // prep1 : 5 min
+        statut: TourStatus.terminee,
+        dateDebut: debut,
+        dateFin: debut.add(const Duration(minutes: 5)),
+      );
+      await tourRepository.updateStatus(
+        tourId: 'tour-lente', // prep2 : 30 min
+        statut: TourStatus.terminee,
+        dateDebut: debut,
+        dateFin: debut.add(const Duration(minutes: 30)),
+      );
+
+      final moyennes = await service.moyennesVitesseParPreparateur();
+
+      expect(moyennes.map((m) => m.preparateurNom), ['Amadou', 'Fatou']);
+    });
+  });
 }

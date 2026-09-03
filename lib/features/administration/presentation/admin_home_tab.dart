@@ -7,7 +7,7 @@ import 'package:genesis_picking/core/widgets/status/stat_card.dart';
 import 'package:genesis_picking/features/administration/administration_providers.dart';
 import 'package:genesis_picking/features/courier/data/courier_request.dart';
 import 'package:genesis_picking/features/courier/data/courier_request_status.dart';
-import 'package:genesis_picking/features/profile/presentation/profile_screen.dart';
+import 'package:genesis_picking/features/settings/presentation/settings_screen.dart';
 import 'package:genesis_picking/features/tours/data/tour.dart';
 
 /// Onglet "Tableau de bord" de l'Administrateur (Refonte UI) — vue
@@ -17,7 +17,8 @@ import 'package:genesis_picking/features/tours/data/tour.dart';
 /// [AdministrationService] que l'ancien tableau de bord.
 ///
 /// L'Administrateur n'a pas d'onglet "Profil" dédié (seulement 4 onglets) —
-/// l'accès au profil/mot de passe reste disponible ici, en action rapide.
+/// l'accès à Paramètres (profil/mot de passe, synchronisation, diagnostic,
+/// actualiser, redémarrer) reste disponible ici, en action rapide.
 class AdminHomeTab extends ConsumerStatefulWidget {
   const AdminHomeTab({super.key});
 
@@ -68,10 +69,10 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
               ),
               IconButton(
                 icon: const Icon(Icons.person_outline),
-                tooltip: 'Profil',
+                tooltip: 'Paramètres',
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   );
                 },
               ),

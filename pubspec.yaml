@@ -74,6 +74,13 @@ dependencies:
   cached_network_image: ^3.4.1
   firebase_core: ^4.14.0
   cloud_firestore: ^6.9.0
+  # Notifications système (bannière + son) affichées côté coursier quand
+  # une nouvelle demande arrive pendant que l'app tourne (premier plan ou
+  # arrière-plan tant que le processus est vivant) — voir
+  # `core/notifications/`. Ne couvre pas le cas app totalement fermée
+  # (nécessiterait Firebase Cloud Messaging + un déclencheur serveur, donc
+  # le plan Blaze, indisponible pour l'instant).
+  flutter_local_notifications: ^22.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
