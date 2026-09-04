@@ -31,12 +31,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _bootstrap() async {
     await ref.read(localDatabaseProvider).open();
-    await ref.read(databaseSeederProvider).seedIfNeeded();
-    // Best-effort, jamais bloquant (voir UserPullSync) : récupère les
-    // comptes créés sur d'autres appareils avant que l'utilisateur ne
-    // tente de se connecter, sans jamais retarder le démarrage en cas de
-    // coupure réseau.
+    // Récupère d'abord les comptes déjà connus du serveur — AVANT de
+    // semer un admin par défaut — pour qu'une nouvelle installation sur
+    // un appareil qui a déjà accès au réseau récupère le VRAI compte
+    // admin existant plutôt que d'en créer un nouveau. Sans cet ordre :
+    // `seedIfNeeded()` créait un compte local ET LE POUSSAIT
+    // IMMÉDIATEMENT vers Firestore (voir `SyncingUserRepository.create`)
+    // avant que cet appel n'ait eu la moindre chance de dire qu'un admin
+    // existait déjà ailleurs — chaque nouvelle installation ajoutait
+    // ainsi un doublon "admin" de plus sur le serveur, jamais nettoyé
+    // (13 comptes "admin" distincts accumulés en 4 jours avant que ce
+    // bug ne soit identifié). Best-effort, jamais bloquant : un échec
+    // réseau ici laisse simplement la base locale vide, et
+    // `seedIfNeeded()` juste en dessous crée alors le tout premier
+    // compte admin comme avant.
     await ref.read(userPullSyncProvider).pullAll();
+    await ref.read(databaseSeederProvider).seedIfNeeded();
     await ref.read(sessionProvider.notifier).restore();
     await ref.read(syncManagerProvider).initialize();
     ref.read(syncServiceProvider).startAutoSync();

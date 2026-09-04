@@ -10,6 +10,15 @@ import 'package:genesis_picking/features/auth/data/user_repository.dart';
 /// être changés immédiatement (voir [defaultIdentifiant] /
 /// [defaultMotDePasse] — affichés uniquement dans les logs de premier
 /// démarrage, jamais codés en dur dans un écran visible).
+///
+/// IMPORTANT — [seedIfNeeded] doit TOUJOURS être appelé après
+/// `UserPullSync.pullAll()`, jamais avant (voir `SplashScreen._bootstrap`) :
+/// [seedIfNeeded] crée le compte ET le pousse immédiatement vers Firestore
+/// (voir `SyncingUserRepository.create`), avant même de savoir qu'un vrai
+/// admin existe peut-être déjà sur le serveur. Appelé avant le pull, ça
+/// crée un nouveau doublon "admin" à CHAQUE nouvelle installation — 13
+/// comptes distincts accumulés ainsi en 4 jours avant que ce bug ne soit
+/// identifié et corrigé (04/09/2026).
 class DatabaseSeeder {
   DatabaseSeeder(this._userRepository);
 
