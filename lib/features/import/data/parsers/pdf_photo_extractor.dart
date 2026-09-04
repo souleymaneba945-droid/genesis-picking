@@ -128,12 +128,20 @@ class PdfrxPhotoExtractor implements PdfPhotoExtractor {
         order: img.ChannelOrder.bgra,
       );
 
-      if (_estPresqueBlanc(decoded)) return null;
-      // Dimensions normales, jamais recadrées sur le contenu : la région
-      // rendue EST la photo telle qu'elle apparaît dans le PDF source
-      // (voir la définition de la région dans PdfParser), pas une version
-      // retaillée par un algorithme de détection de contenu.
-      return Uint8List.fromList(img.encodeJpg(decoded, quality: 95));
+      // La région passée par PdfParser (voir `_associerPhotos`) couvre
+      // toute la largeur de la ligne jusqu'à la colonne quantité — bien
+      // plus large que la photo elle-même pour un produit haut et étroit
+      // (ex. un flacon), qui n'en occupe alors qu'une bande centrale.
+      // Sans ce recadrage, le zoom plein écran (`ZoomableProductImage`)
+      // affichait un produit minuscule au milieu d'un grand cadre blanc
+      // plutôt qu'une photo qui remplit l'écran (retour terrain,
+      // 04/09/2026). Recadre sur le contenu réel, PAS sur une zone
+      // devinée : simple retrait des marges uniformément blanches
+      // autour de ce qui a été rendu.
+      final recadree = _recadrerSurContenu(decoded);
+
+      if (_estPresqueBlanc(recadree)) return null;
+      return Uint8List.fromList(img.encodeJpg(recadree, quality: 95));
     } catch (_) {
       // Une région illisible (rendu échoué) ne doit jamais faire
       // planter tout l'import : cette seule photo reste absente.
@@ -141,6 +149,58 @@ class PdfrxPhotoExtractor implements PdfPhotoExtractor {
     } finally {
       rendered?.dispose();
     }
+  }
+
+  /// Marge de sécurité (en pixels, à l'échelle [_scale]) laissée autour
+  /// du contenu détecté — jamais 0 : raser exactement au pixel détecté
+  /// risquerait de couper un bord de produit légèrement clair (reflet,
+  /// anti-aliasing du rendu PDF) plutôt que de garder un peu de blanc.
+  static const int _margeRecadrage = 6;
+
+  /// Seuil de luminosité (0-255) sous lequel un pixel compte comme
+  /// "contenu" plutôt que marge blanche — délibérément plus permissif
+  /// que [_seuilBlanc] (qui détecte une case ENTIÈREMENT vide) : ici
+  /// c'est l'inverse, on cherche à ne perdre AUCUN pixel qui appartient
+  /// réellement au produit, y compris ses zones claires.
+  static const double _seuilContenu = 248;
+
+  /// Retire les marges uniformément blanches autour du contenu réel de
+  /// [image] — jamais un recadrage deviné : la boîte englobante est
+  /// calculée sur les pixels effectivement rendus, avec [_margeRecadrage]
+  /// de marge de sécurité. Retourne [image] inchangée si aucun contenu
+  /// n'est détecté (page vide — laissé à [_estPresqueBlanc] juste après)
+  /// ou si la boîte calculée est dégénérée.
+  img.Image _recadrerSurContenu(img.Image image) {
+    const pas = 3;
+    var minX = image.width;
+    var maxX = -1;
+    var minY = image.height;
+    var maxY = -1;
+
+    for (var y = 0; y < image.height; y += pas) {
+      for (var x = 0; x < image.width; x += pas) {
+        final pixel = image.getPixel(x, y);
+        final luminosite = (pixel.r + pixel.g + pixel.b) / 3;
+        if (luminosite < _seuilContenu) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (maxX < 0 || maxY < 0) return image;
+
+    final left = (minX - _margeRecadrage).clamp(0, image.width);
+    final top = (minY - _margeRecadrage).clamp(0, image.height);
+    final right = (maxX + _margeRecadrage).clamp(0, image.width);
+    final bottom = (maxY + _margeRecadrage).clamp(0, image.height);
+    final largeur = right - left;
+    final hauteur = bottom - top;
+    if (largeur <= 0 || hauteur <= 0) return image;
+
+    return img.copyCrop(image, x: left, y: top, width: largeur, height: hauteur);
   }
 
   bool _estPresqueBlanc(img.Image image) {
