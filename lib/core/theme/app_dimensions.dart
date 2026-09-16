@@ -16,11 +16,30 @@ class AppDimensions {
   static const double primaryButtonHeight = 64;
   static const double minTapTargetSize = 48;
 
-  static const double cornerRadius = 14;
+  /// Rayon standard d'une carte (Refonte UI). Modernisation visuelle :
+  /// 16, valeur du document de design system fourni par l'utilisateur le
+  /// 13/09/2026 (remplace le 22 calculé la veille depuis le prototype
+  /// v0.dev — ce document, plus récent et explicite, prévaut).
+  static const double cornerRadius = 16;
 
-  /// Rayon des grandes cartes héros (tableau de bord, carte produit de
-  /// l'écran de picking) — Refonte UI, plus visuel que [cornerRadius].
+  /// Rayon des toutes plus grandes surfaces (carte de connexion) — source :
+  /// `rounded-3xl`, seule valeur de la maquette PAS remappée par le thème
+  /// (reste le 24 par défaut de Tailwind, un cran au-dessus de
+  /// [cornerRadius]).
   static const double cornerRadiusLg = 24;
+
+  /// Rayon d'un bouton ou d'un champ de saisie — source : `rounded-xl`
+  /// (`var(--radius) + 4px` = 18).
+  static const double cornerRadiusMd = 18;
+
+  /// Rayon d'une petite tuile interne à une carte — source : `rounded-md`
+  /// (`var(--radius) - 2px` = 12).
+  static const double cornerRadiusSm = 12;
+
+  /// Rayon "pilule" d'un badge de statut, toujours égal ou supérieur à la
+  /// moitié de sa hauteur pour rester parfaitement arrondi quel que soit
+  /// son contenu.
+  static const double cornerRadiusPill = 999;
 
   /// Marge intérieure standard d'une carte de tableau de bord.
   static const double cardPadding = 20;

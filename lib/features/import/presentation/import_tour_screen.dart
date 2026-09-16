@@ -248,7 +248,6 @@ class _ImportTourScreenState extends ConsumerState<ImportTourScreen> {
                     initialValue: _selectedPreparateurId,
                     decoration: const InputDecoration(
                       labelText: 'Préparateur destinataire',
-                      border: OutlineInputBorder(),
                     ),
                     items: [
                       for (final p in preparateurs)

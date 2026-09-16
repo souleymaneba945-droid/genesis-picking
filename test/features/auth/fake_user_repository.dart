@@ -90,6 +90,46 @@ class FakeUserRepository implements UserRepository {
   }
 
   @override
+  Future<Result<void>> renameIdentifiant({
+    required String userId,
+    required String nouvelIdentifiant,
+  }) async {
+    if (_accounts.containsKey(nouvelIdentifiant)) {
+      return const Result.failure(
+        ValidationException('Cet identifiant est déjà utilisé.'),
+      );
+    }
+
+    UserAccount? compte;
+    for (final a in _accounts.values) {
+      if (a.id == userId) {
+        compte = a;
+        break;
+      }
+    }
+    if (compte == null) {
+      return const Result.failure(ValidationException('Compte introuvable.'));
+    }
+
+    final ancienIdentifiant = compte.identifiant;
+    final credentials = _credentials[ancienIdentifiant];
+    _accounts.remove(ancienIdentifiant);
+    _credentials.remove(ancienIdentifiant);
+
+    _accounts[nouvelIdentifiant] = UserAccount(
+      id: compte.id,
+      identifiant: nouvelIdentifiant,
+      nomAffichage: compte.nomAffichage,
+      role: compte.role,
+      actif: compte.actif,
+      creeLe: compte.creeLe,
+    );
+    if (credentials != null) _credentials[nouvelIdentifiant] = credentials;
+
+    return const Result.success(null);
+  }
+
+  @override
   Future<bool> isEmpty() async => _accounts.isEmpty;
 
   @override

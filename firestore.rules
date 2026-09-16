@@ -28,5 +28,12 @@ service cloud.firestore {
     match /courier_requests/{requestId} {
       allow read, write: if true;
     }
+    // Module 5 v2, Rubrique 2 — cartographie entrepôt par marque, voir
+    // MODULE_5_V2.md. Non déployé tant que l'utilisateur ne l'a pas
+    // explicitement demandé (voir CLAUDE.md : sans ce bloc, chaque
+    // écriture échoue silencieusement en permission-denied).
+    match /marque_emplacements/{id} {
+      allow read, write: if true;
+    }
   }
 }

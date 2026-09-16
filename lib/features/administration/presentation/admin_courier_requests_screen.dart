@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genesis_picking/core/theme/app_colors.dart';
 import 'package:genesis_picking/core/theme/app_dimensions.dart';
 import 'package:genesis_picking/core/theme/app_typography.dart';
+import 'package:genesis_picking/core/widgets/status/status_pill.dart';
 import 'package:genesis_picking/features/administration/administration_providers.dart';
 import 'package:genesis_picking/features/administration/presentation/admin_history_screen.dart';
 import 'package:genesis_picking/features/courier/data/courier_request.dart';
@@ -12,8 +13,9 @@ import 'package:genesis_picking/features/courier/data/courier_request_status.dar
 /// demandes coursier (Cahier des charges, écran 4.13 / PRD 3.5) : toutes
 /// les demandes, tous préparateurs et coursiers confondus, avec leur état
 /// — pour le suivi et la détection d'anomalies. L'historique des tournées
-/// terminées (écran 3.6) reste accessible en un tap, faute d'un 5ᵉ onglet
-/// disponible.
+/// terminées (écran 3.6) reste accessible en un tap. Les statistiques de
+/// demande (Rubrique 4ter) ont leur propre onglet ("Statistiques") depuis
+/// le 16/09/2026, plus ici.
 class AdminCourierRequestsScreen extends ConsumerWidget {
   const AdminCourierRequestsScreen({super.key});
 
@@ -87,27 +89,28 @@ class _RequestCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppDimensions.cardPadding),
         child: Row(
           children: [
-            Icon(_iconFor(request.etat), color: _colorFor(request.etat)),
-            const SizedBox(width: AppDimensions.spacingMd),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _statusLabel(request.etat),
+                    'Quantité ${request.quantiteDemandee} · ${request.emplacement}',
                     style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    'Quantité ${request.quantiteDemandee} · ${request.emplacement}',
-                    style: AppTypography.secondaryLabel,
-                  ),
                   Text(
                     _formatDate(request.dateCreation),
                     style: AppTypography.secondaryLabel,
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: AppDimensions.spacingSm),
+            StatusPill(
+              label: _statusLabel(request.etat),
+              background: _backgroundFor(request.etat),
+              foreground: _colorFor(request.etat),
+              icon: _iconFor(request.etat),
             ),
           ],
         ),
@@ -140,12 +143,21 @@ class _RequestCard extends StatelessWidget {
       CourierRequestStatus.terminee => AppColors.success,
       CourierRequestStatus.traitee => AppColors.success,
       CourierRequestStatus.enAttente => AppColors.neutral,
-      _ => AppColors.warning,
+      _ => AppColors.warningText,
+    };
+  }
+
+  Color _backgroundFor(CourierRequestStatus etat) {
+    return switch (etat) {
+      CourierRequestStatus.terminee => AppColors.successSoft,
+      CourierRequestStatus.traitee => AppColors.successSoft,
+      CourierRequestStatus.enAttente => AppColors.surfaceAlt,
+      _ => AppColors.warningSoft,
     };
   }
 
   String _formatDate(DateTime date) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${two(date.day)}/${two(date.month)} à ${two(date.hour)}:${two(date.minute)}';
   }
 }

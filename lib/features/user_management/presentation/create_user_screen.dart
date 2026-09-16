@@ -89,7 +89,6 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
               controller: _nomController,
               decoration: const InputDecoration(
                 labelText: 'Nom affiché',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppDimensions.spacingMd),
@@ -97,7 +96,6 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
               controller: _identifiantController,
               decoration: const InputDecoration(
                 labelText: 'Identifiant de connexion',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppDimensions.spacingMd),
@@ -106,15 +104,13 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
               obscureText: true,
               decoration: const InputDecoration(
                 labelText: 'Mot de passe initial',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: AppDimensions.spacingMd),
             DropdownButtonFormField<UserRole>(
-              value: _role,
+              initialValue: _role,
               decoration: const InputDecoration(
                 labelText: 'Rôle',
-                border: OutlineInputBorder(),
               ),
               items: const [
                 DropdownMenuItem(

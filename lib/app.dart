@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genesis_picking/core/l10n/app_localizations.dart';
 import 'package:genesis_picking/core/navigation/app_router.dart';
 import 'package:genesis_picking/core/theme/app_theme.dart';
+import 'package:genesis_picking/features/auth/presentation/account_revocation_watcher.dart';
 import 'package:genesis_picking/features/courier/presentation/courier_notification_watcher.dart';
 
 /// Widget racine de GENESIS PICKING.
@@ -23,6 +24,10 @@ class GenesisPickingApp extends ConsumerWidget {
     // déclencher même par-dessus un écran de détail, pas seulement depuis
     // `CoursierShell`. Voir `CourierNotificationWatcher`.
     ref.watch(courierNotificationWatcherProvider);
+    // Même principe — Module 5 v2, Rubrique 3 : ferme la session en cours
+    // si le compte a été désactivé par un administrateur pendant qu'elle
+    // tournait déjà (voir `AccountRevocationWatcher`).
+    ref.watch(accountRevocationWatcherProvider);
 
     return MaterialApp.router(
       title: 'GENESIS PICKING',

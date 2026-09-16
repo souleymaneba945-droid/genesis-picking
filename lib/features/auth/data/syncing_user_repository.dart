@@ -88,6 +88,25 @@ class SyncingUserRepository implements UserRepository {
   }
 
   @override
+  Future<Result<void>> renameIdentifiant({
+    required String userId,
+    required String nouvelIdentifiant,
+  }) async {
+    final result = await _local.renameIdentifiant(
+      userId: userId,
+      nouvelIdentifiant: nouvelIdentifiant,
+    );
+    await result.when(
+      // `_pushAfterWrite` relit le compte par id (voir `_findById`) : il
+      // récupère donc automatiquement le NOUVEL identifiant, aucune
+      // plomberie supplémentaire nécessaire pour le propager au serveur.
+      success: (_) => _pushAfterWrite(userId),
+      failure: (_) async {},
+    );
+    return result;
+  }
+
+  @override
   Future<void> upsertFromRemote({
     required String id,
     required String identifiant,

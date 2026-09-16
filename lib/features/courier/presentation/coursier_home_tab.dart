@@ -25,10 +25,11 @@ class CoursierHomeTab extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final asyncRequests = ref.watch(courierControllerProvider);
 
-    final ouvertes = asyncRequests.valueOrNull
-            ?.where((r) => !_etatsClos.contains(r.request.etat))
-            .length ??
-        0;
+    final demandes = asyncRequests.valueOrNull ?? const [];
+    final ouvertes =
+        demandes.where((r) => !_etatsClos.contains(r.request.etat)).length;
+    final traitees =
+        demandes.where((r) => _etatsClos.contains(r.request.etat)).length;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -38,13 +39,34 @@ class CoursierHomeTab extends ConsumerWidget {
         AppDimensions.spacingLg,
       ),
       children: [
-        Text('Bonjour ${session?.displayName ?? ''}', style: AppTypography.screenTitle),
+        const Text('Bonjour,', style: AppTypography.secondaryLabel),
+        Text('${session?.displayName ?? ''} 👋', style: AppTypography.greetingName),
+        const SizedBox(height: AppDimensions.spacingXs),
+        const Text(
+          'Voici vos demandes de vérification du jour.',
+          style: AppTypography.secondaryLabel,
+        ),
         const SizedBox(height: AppDimensions.spacingLg),
-        StatCard(
-          value: '$ouvertes',
-          label: ouvertes > 1 ? 'demandes en attente' : 'demande en attente',
-          icon: Icons.support_agent,
-          color: ouvertes > 0 ? AppColors.warning : AppColors.success,
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                value: '$ouvertes',
+                label: ouvertes > 1 ? 'demandes en attente' : 'demande en attente',
+                icon: Icons.support_agent,
+                color: ouvertes > 0 ? AppColors.warning : AppColors.success,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.spacingMd),
+            Expanded(
+              child: StatCard(
+                value: '$traitees',
+                label: 'traitées',
+                icon: Icons.check_circle_outline,
+                color: AppColors.success,
+              ),
+            ),
+          ],
         ),
         if (session != null) ...[
           const SizedBox(height: AppDimensions.spacingLg),

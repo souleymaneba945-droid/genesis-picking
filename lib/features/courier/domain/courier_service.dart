@@ -363,6 +363,68 @@ class CourierService {
     return Result.success(updated);
   }
 
+  /// Ouvre en une fois toutes les demandes de [requestIds] (Module 5 v2,
+  /// Rubrique 1 — liste fusionnée) : réutilise [openRequest] demande par
+  /// demande, aucune nouvelle règle métier, chaque demande individuelle
+  /// suit exactement la même transition qu'aujourd'hui
+  /// (`recue`/`enAttente` → `acceptee`). Une demande qui échoue à
+  /// s'ouvrir (rare — supprimée entre-temps, par exemple) est ignorée,
+  /// jamais bloquante pour les autres ; échec global seulement si AUCUNE
+  /// n'a pu être ouverte.
+  Future<Result<List<CourierRequestDetailView>>> openGroup(
+    List<String> requestIds,
+  ) async {
+    final vues = <CourierRequestDetailView>[];
+    for (final id in requestIds) {
+      final result = await openRequest(id);
+      result.when(success: vues.add, failure: (_) {});
+    }
+    if (vues.isEmpty) {
+      return const Result.failure(ValidationException('Demande introuvable.'));
+    }
+    return Result.success(vues);
+  }
+
+  /// Répond en une fois pour toutes les demandes de [requestIds] (Module
+  /// 5 v2, Rubrique 1) : réutilise [respond] demande par demande — chaque
+  /// préparateur concerné reçoit son propre résultat dans son propre
+  /// écran "Vérifications" (son propre horodatage, sa propre entrée de
+  /// journal d'activité, son propre envoi au serveur), un seul geste du
+  /// coursier suffit. Une demande qui échoue à se résoudre n'empêche
+  /// jamais les autres ; échec global seulement si AUCUNE n'a pu être
+  /// résolue.
+  Future<Result<void>> respondToGroup({
+    required List<String> requestIds,
+    required CourierRequestResult resultat,
+  }) async {
+    var auMoinsUneReussite = false;
+    for (final id in requestIds) {
+      final result = await respond(requestId: id, resultat: resultat);
+      result.when(success: (_) => auMoinsUneReussite = true, failure: (_) {});
+    }
+    if (!auMoinsUneReussite) {
+      return const Result.failure(
+        ValidationException('Impossible de répondre à cette demande.'),
+      );
+    }
+    return const Result.success(null);
+  }
+
+  /// Supprime en une fois toutes les demandes de [requestIds] (Module 5
+  /// v2, Rubrique 1) — réutilise [deleteRequest] demande par demande,
+  /// même principe que [purgeClosedForCoursier].
+  Future<Result<void>> deleteGroup(List<String> requestIds) async {
+    var auMoinsUneReussite = false;
+    for (final id in requestIds) {
+      final result = await deleteRequest(id);
+      result.when(success: (_) => auMoinsUneReussite = true, failure: (_) {});
+    }
+    if (!auMoinsUneReussite) {
+      return const Result.failure(ValidationException('Demande introuvable.'));
+    }
+    return const Result.success(null);
+  }
+
   /// Demandes envoyées par ce préparateur (Directive, "Retour
   /// préparateur") : toute demande "Traitée" non encore clôturée est
   /// automatiquement close ("Terminée") au moment où le préparateur la

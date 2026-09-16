@@ -5,6 +5,7 @@ import 'package:genesis_picking/core/session/user_role.dart';
 import 'package:genesis_picking/core/theme/app_colors.dart';
 import 'package:genesis_picking/core/theme/app_dimensions.dart';
 import 'package:genesis_picking/core/theme/app_typography.dart';
+import 'package:genesis_picking/core/widgets/branding/initials_avatar.dart';
 import 'package:genesis_picking/core/widgets/buttons/secondary_button.dart';
 import 'package:genesis_picking/features/auth/auth_providers.dart';
 import 'package:genesis_picking/features/auth/data/user_account.dart';
@@ -44,11 +45,7 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppDimensions.cardPadding),
             child: Column(
               children: [
-                const CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.primarySoft,
-                  child: Icon(Icons.person, size: 36, color: AppColors.primary),
-                ),
+                InitialsAvatar(name: session.displayName, radius: 36),
                 const SizedBox(height: AppDimensions.spacingMd),
                 Text(
                   session.displayName,

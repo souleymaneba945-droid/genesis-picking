@@ -142,6 +142,38 @@ class DriftUserRepository implements UserRepository {
   }
 
   @override
+  Future<Result<void>> renameIdentifiant({
+    required String userId,
+    required String nouvelIdentifiant,
+  }) async {
+    final existing = await findByIdentifiant(nouvelIdentifiant);
+    if (existing != null && existing.id != userId) {
+      return const Result.failure(
+        ValidationException('Cet identifiant est déjà utilisé.'),
+      );
+    }
+
+    final updated = await (_database.update(
+      _database.usersTable,
+    )..where((tbl) => tbl.id.equals(userId)))
+        .write(
+      UsersTableCompanion(identifiant: Value(nouvelIdentifiant)),
+    );
+
+    if (updated == 0) {
+      return const Result.failure(
+        ValidationException('Compte introuvable.'),
+      );
+    }
+
+    AppLogger.event(
+      'Identifiant renommé pour le compte $userId → $nouvelIdentifiant',
+      tag: 'UserRepository',
+    );
+    return const Result.success(null);
+  }
+
+  @override
   Future<bool> isEmpty() async {
     final row = await _database.select(_database.usersTable).get();
     return row.isEmpty;

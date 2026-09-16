@@ -95,6 +95,69 @@ void main() {
     });
   });
 
+  group(
+    'SyncingUserRepository.renameIdentifiant — Module 5 v2, Rubrique 3',
+    () {
+      test('renomme l\'identifiant et transmet le NOUVEL identifiant au '
+          'serveur', () async {
+        final created = await repository.create(
+          identifiant: 'ancien',
+          nomAffichage: 'Compte',
+          role: UserRole.preparateur,
+          motDePasse: 'MotDePasse123',
+        );
+        final userId = created.when(
+          success: (a) => a.id,
+          failure: (_) => fail('devrait réussir'),
+        );
+        remote.pushed.clear();
+
+        final result = await repository.renameIdentifiant(
+          userId: userId,
+          nouvelIdentifiant: 'nouveau',
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(await repository.findByIdentifiant('ancien'), isNull);
+        expect(await repository.findByIdentifiant('nouveau'), isNotNull);
+        expect(remote.pushed, hasLength(1));
+        expect(remote.pushed.single.identifiant, 'nouveau');
+        expect(remote.pushed.single.id, userId);
+      });
+
+      test('refuse de renommer vers un identifiant déjà utilisé, '
+          'jamais transmis', () async {
+        await repository.create(
+          identifiant: 'existant',
+          nomAffichage: 'Compte A',
+          role: UserRole.preparateur,
+          motDePasse: 'MotDePasse123',
+        );
+        final created = await repository.create(
+          identifiant: 'autre',
+          nomAffichage: 'Compte B',
+          role: UserRole.coursier,
+          motDePasse: 'MotDePasse123',
+        );
+        final userId = created.when(
+          success: (a) => a.id,
+          failure: (_) => fail('devrait réussir'),
+        );
+        remote.pushed.clear();
+
+        final result = await repository.renameIdentifiant(
+          userId: userId,
+          nouvelIdentifiant: 'existant',
+        );
+
+        expect(result.isFailure, isTrue);
+        expect(remote.pushed, isEmpty);
+        // Le compte B garde son identifiant d'origine.
+        expect(await repository.findByIdentifiant('autre'), isNotNull);
+      });
+    },
+  );
+
   group('SyncingUserRepository — lecture, toujours locale', () {
     test('upsertFromRemote n\'est jamais renvoyé vers le serveur '
         '(pas d\'aller-retour)', () async {

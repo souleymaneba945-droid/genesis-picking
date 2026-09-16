@@ -6,6 +6,7 @@ import 'package:genesis_picking/core/session/user_role.dart';
 import 'package:genesis_picking/core/theme/app_colors.dart';
 import 'package:genesis_picking/features/auth/auth_providers.dart';
 import 'package:genesis_picking/features/sync/sync_providers.dart';
+import 'package:genesis_picking/features/warehouse_location/warehouse_location_providers.dart';
 import 'package:go_router/go_router.dart';
 
 /// Écran de démarrage.
@@ -46,6 +47,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // `seedIfNeeded()` juste en dessous crée alors le tout premier
     // compte admin comme avant.
     await ref.read(userPullSyncProvider).pullAll();
+    // Emplacements entrepôt (Module 5 v2, Rubrique 2) — même best-effort,
+    // jamais bloquant, aucun ordre particulier requis avec le seed admin
+    // ci-dessous (aucun compte n'est créé automatiquement ici).
+    await ref.read(brandWarehouseLocationPullSyncProvider).pullAll();
     await ref.read(databaseSeederProvider).seedIfNeeded();
     await ref.read(sessionProvider.notifier).restore();
     await ref.read(syncManagerProvider).initialize();

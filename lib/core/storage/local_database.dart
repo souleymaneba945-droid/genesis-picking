@@ -19,6 +19,7 @@ import 'package:genesis_picking/features/picking/data/tables/picking_product_sta
 import 'package:genesis_picking/features/sync/data/tables/sync_run_logs_table.dart';
 import 'package:genesis_picking/features/tours/data/tables/tour_product_lines_table.dart';
 import 'package:genesis_picking/features/tours/data/tables/tours_table.dart';
+import 'package:genesis_picking/features/warehouse_location/data/tables/brand_warehouse_locations_table.dart';
 
 part 'local_database.g.dart';
 
@@ -48,6 +49,7 @@ part 'local_database.g.dart';
     SyncRunLogsTable,
     ImportHistoryTable,
     ActivityLogTable,
+    BrandWarehouseLocationsTable,
   ],
 )
 class LocalDatabase extends _$LocalDatabase implements LocalStorageService {
@@ -69,8 +71,11 @@ class LocalDatabase extends _$LocalDatabase implements LocalStorageService {
   // coursier qui n'a jamais téléchargé la tournée (voir `CourierService`).
   // Colonnes dateDebut/dateFin sur ToursTable → schéma 10 : mesure de la
   // durée réelle de picking (voir `Tour.dureeEcoulee`).
+  // Module 5 v2, Rubrique 2 : ajout de BrandWarehouseLocationsTable →
+  // schéma 11 — cartographie entrepôt par marque, indépendante de
+  // l'emplacement picking existant (voir `MODULE_5_V2.md`).
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -122,6 +127,9 @@ class LocalDatabase extends _$LocalDatabase implements LocalStorageService {
           if (from < 10) {
             await migrator.addColumn(toursTable, toursTable.dateDebut);
             await migrator.addColumn(toursTable, toursTable.dateFin);
+          }
+          if (from < 11) {
+            await migrator.createTable(brandWarehouseLocationsTable);
           }
         },
       );

@@ -15,6 +15,7 @@ import 'package:genesis_picking/features/profile/presentation/profile_screen.dar
 import 'package:genesis_picking/features/settings/presentation/diagnostic_screen.dart';
 import 'package:genesis_picking/features/sync/presentation/sync_screen.dart';
 import 'package:genesis_picking/features/tours/tours_providers.dart';
+import 'package:genesis_picking/features/warehouse_location/warehouse_location_providers.dart';
 
 /// Écran "Paramètres" — informations d'application et raccourcis.
 ///
@@ -47,6 +48,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     try {
       await ref.read(userPullSyncProvider).pullAll();
+      await ref.read(brandWarehouseLocationPullSyncProvider).pullAll();
       switch (session.role) {
         case UserRole.preparateur:
           await ref
@@ -100,92 +102,134 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final environnement = AppConfig.instance.environment.environment.name;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppDimensions.spacingMd),
-        children: [
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.sync_outlined),
-              title: const Text('Synchronisation'),
-              subtitle: const Text('État, dernière synchronisation'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const SyncScreen()));
-              },
-            ),
+    // Pas de `Scaffold`/`AppBar` propre (Modernisation visuelle,
+    // 12/09/2026) : cet écran est monté comme contenu d'onglet sous la
+    // barre supérieure déjà fournie par `RoleShell` (Préparateur, Coursier)
+    // — un AppBar ici créait une double barre. Quand l'Administrateur y
+    // accède en écran séparé (`AdminHomeTab`), c'est cet appelant qui
+    // fournit son propre `Scaffold`/`AppBar`, pas ce widget.
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.spacingLg,
+        AppDimensions.spacingSm,
+        AppDimensions.spacingLg,
+        AppDimensions.spacingLg,
+      ),
+      children: [
+        const Text('Paramètres', style: AppTypography.screenTitle),
+        const SizedBox(height: AppDimensions.spacingLg),
+        _SettingsTile(
+          icon: Icons.sync_outlined,
+          iconColor: AppColors.primary,
+          title: 'Synchronisation',
+          subtitle: 'État, dernière synchronisation',
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SyncScreen()));
+          },
+        ),
+        const SizedBox(height: AppDimensions.spacingSm),
+        _SettingsTile(
+          icon: Icons.person_outline,
+          iconColor: AppColors.primary,
+          title: 'Profil',
+          subtitle: 'Informations du compte, mot de passe',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: AppDimensions.spacingSm),
+        _SettingsTile(
+          icon: Icons.health_and_safety_outlined,
+          iconColor: AppColors.primary,
+          title: 'Diagnostic',
+          subtitle: 'Vitesse de connexion, état de l\'appli',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DiagnosticScreen()),
+            );
+          },
+        ),
+        const SizedBox(height: AppDimensions.spacingXl),
+        _SettingsTile(
+          icon: Icons.refresh,
+          iconColor: AppColors.success,
+          title: 'Actualiser',
+          subtitle: 'Vérifie tout de suite s\'il y a du nouveau',
+          isLoading: _isRefreshing,
+          onTap: _isRefreshing ? null : _actualiser,
+        ),
+        const SizedBox(height: AppDimensions.spacingSm),
+        _SettingsTile(
+          icon: Icons.restart_alt,
+          iconColor: AppColors.error,
+          title: 'Redémarrer l\'application',
+          subtitle: 'Si l\'appli semble bloquée',
+          onTap: _confirmerRedemarrage,
+        ),
+        const SizedBox(height: AppDimensions.spacingXl),
+        Center(
+          child: Column(
+            children: [
+              const Text(
+                AppConstants.appName,
+                style: AppTypography.secondaryLabel,
+              ),
+              Text(
+                'Version ${AppConstants.appVersion} ($environnement)',
+                style: AppTypography.secondaryLabel,
+              ),
+            ],
           ),
-          const SizedBox(height: AppDimensions.spacingSm),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profil'),
-              subtitle: const Text('Informations du compte, mot de passe'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppDimensions.spacingSm),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.health_and_safety_outlined),
-              title: const Text('Diagnostic'),
-              subtitle: const Text('Vitesse de connexion, état de l\'appli'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const DiagnosticScreen()),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: AppDimensions.spacingXl),
-          Card(
-            child: ListTile(
-              leading: _isRefreshing
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-              title: const Text('Actualiser'),
-              subtitle: const Text('Vérifie tout de suite s\'il y a du nouveau'),
-              onTap: _isRefreshing ? null : _actualiser,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.spacingSm),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.restart_alt, color: AppColors.error),
-              title: const Text('Redémarrer l\'application'),
-              subtitle: const Text('Si l\'appli semble bloquée'),
-              onTap: _confirmerRedemarrage,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.spacingXl),
-          Center(
-            child: Column(
-              children: [
-                const Text(
-                  AppConstants.appName,
-                  style: AppTypography.secondaryLabel,
-                ),
-                Text(
-                  'Version ${AppConstants.appVersion} ($environnement)',
-                  style: AppTypography.secondaryLabel,
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Ligne de réglage — icône dans un médaillon de couleur douce, plutôt que
+/// l'icône nue par défaut d'un `ListTile` (Modernisation visuelle,
+/// 12/09/2026, même langage que le reste de la Refonte UI : couleur =
+/// signification, jamais une simple décoration).
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : CircleAvatar(
+                backgroundColor: iconColor.withValues(alpha: 0.12),
+                foregroundColor: iconColor,
+                child: Icon(icon),
+              ),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: onTap == null ? null : const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

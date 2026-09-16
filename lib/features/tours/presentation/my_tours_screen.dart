@@ -5,12 +5,13 @@ import 'package:genesis_picking/core/providers/core_providers.dart';
 import 'package:genesis_picking/core/theme/app_colors.dart';
 import 'package:genesis_picking/core/theme/app_dimensions.dart';
 import 'package:genesis_picking/core/theme/app_typography.dart';
+import 'package:genesis_picking/core/widgets/chips/app_filter_chip.dart';
 import 'package:genesis_picking/core/widgets/feedback/app_snackbar.dart';
+import 'package:genesis_picking/core/widgets/status/status_pill.dart';
 import 'package:genesis_picking/features/import/presentation/import_tour_screen.dart';
 import 'package:genesis_picking/features/tours/data/tour.dart';
 import 'package:genesis_picking/features/tours/data/tour_status.dart';
 import 'package:genesis_picking/features/tours/presentation/tour_detail_screen.dart';
-import 'package:genesis_picking/features/tours/presentation/widgets/tour_action_button.dart';
 import 'package:genesis_picking/features/tours/presentation/widgets/tour_status_badge.dart';
 import 'package:genesis_picking/features/tours/tours_providers.dart';
 
@@ -32,8 +33,32 @@ class MyToursScreen extends ConsumerStatefulWidget {
   ConsumerState<MyToursScreen> createState() => _MyToursScreenState();
 }
 
+/// Filtre d'affichage de "Mes commandes" (Modernisation visuelle,
+/// 12/09/2026, maquette v0.dev) — purement local à cet écran, ne change
+/// jamais la donnée ni sa source : un simple sous-ensemble de
+/// [toursForPreparateurProvider], jamais une nouvelle requête.
+enum _FiltreTournee { toutes, aFaire, enCours, terminees }
+
 class _MyToursScreenState extends ConsumerState<MyToursScreen> {
   final Set<String> _downloadingIds = {};
+  _FiltreTournee _filtre = _FiltreTournee.toutes;
+
+  String _libelleFiltre(_FiltreTournee f) => switch (f) {
+        _FiltreTournee.toutes => 'Toutes',
+        _FiltreTournee.aFaire => 'À faire',
+        _FiltreTournee.enCours => 'En cours',
+        _FiltreTournee.terminees => 'Terminées',
+      };
+
+  bool _correspond(Tour tour) {
+    return switch (_filtre) {
+      _FiltreTournee.toutes => true,
+      _FiltreTournee.aFaire =>
+        tour.statut == TourStatus.disponible || tour.statut == TourStatus.telechargee,
+      _FiltreTournee.enCours => tour.statut == TourStatus.enCours,
+      _FiltreTournee.terminees => tour.statut == TourStatus.terminee,
+    };
+  }
 
   /// À appeler après toute écriture LOCALE (téléchargement, suppression)
   /// qui ne serait pas automatiquement reflétée par le flux distant tant
@@ -153,83 +178,209 @@ class _MyToursScreenState extends ConsumerState<MyToursScreen> {
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           data: (tours) {
-            if (tours.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: AppDimensions.spacingXl),
-                  Center(child: Text('Aucune tournée pour le moment.')),
-                ],
-              );
-            }
-            return ListView.separated(
+            final filtrees = tours.where(_correspond).toList();
+            int compte(_FiltreTournee f) => switch (f) {
+                  _FiltreTournee.toutes => tours.length,
+                  _FiltreTournee.aFaire => tours
+                      .where(
+                        (t) =>
+                            t.statut == TourStatus.disponible ||
+                            t.statut == TourStatus.telechargee,
+                      )
+                      .length,
+                  _FiltreTournee.enCours =>
+                    tours.where((t) => t.statut == TourStatus.enCours).length,
+                  _FiltreTournee.terminees =>
+                    tours.where((t) => t.statut == TourStatus.terminee).length,
+                };
+
+            return ListView(
               padding: const EdgeInsets.fromLTRB(
                 AppDimensions.spacingLg,
                 AppDimensions.spacingSm,
                 AppDimensions.spacingLg,
                 AppDimensions.spacingLg,
               ),
-              itemCount: tours.length + 1,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppDimensions.spacingSm),
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return const Text('Ma tournée',
-                      style: AppTypography.screenTitle);
-                }
-                final tour = tours[index - 1];
-                final isDownloading = _downloadingIds.contains(tour.id);
-                return Card(
-                  child: InkWell(
-                    onTap: () => _openDetail(tour),
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.cornerRadius),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppDimensions.cardPadding),
-                      child: Row(
-                        children: [
-                          TourStatusBadge(statut: tour.statut),
-                          const SizedBox(width: AppDimensions.spacingMd),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  tour.numeroTournee,
-                                  style: AppTypography.body.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  tour.estTeleChargeeLocalement
-                                      ? '${tour.produitsTraites}/${tour.nombreTotalProduits} produits traités'
-                                      : 'Pas encore téléchargée',
-                                  style: AppTypography.secondaryLabel,
-                                ),
-                              ],
-                            ),
-                          ),
-                          TourActionButton(
-                            tour: tour,
-                            isLoading: isDownloading,
-                            compact: true,
-                            onDownload: () => _download(tour),
-                            onStartOrResume: () => _openDetail(tour),
-                          ),
-                          IconButton(
-                            onPressed: () => _confirmerSuppression(tour),
-                            icon: const Icon(Icons.delete_outline),
-                            color: AppColors.neutral,
-                            tooltip: 'Supprimer la tournée',
-                          ),
-                        ],
-                      ),
-                    ),
+              children: [
+                const Text('Mes commandes', style: AppTypography.screenTitle),
+                Text(
+                  '${tours.length} commande${tours.length > 1 ? 's' : ''} assignée${tours.length > 1 ? 's' : ''}',
+                  style: AppTypography.secondaryLabel,
+                ),
+                const SizedBox(height: AppDimensions.spacingMd),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final f in _FiltreTournee.values) ...[
+                        AppFilterChip(
+                          label: _libelleFiltre(f),
+                          count: compte(f),
+                          selected: _filtre == f,
+                          onTap: () => setState(() => _filtre = f),
+                        ),
+                        const SizedBox(width: AppDimensions.spacingSm),
+                      ],
+                    ],
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: AppDimensions.spacingMd),
+                if (filtrees.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppDimensions.spacingXl),
+                    child: Center(child: Text('Aucune commande dans ce filtre.')),
+                  )
+                else
+                  for (final tour in filtrees) ...[
+                    _TourCard(
+                      tour: tour,
+                      isDownloading: _downloadingIds.contains(tour.id),
+                      onOpen: () => _openDetail(tour),
+                      onDownload: () => _download(tour),
+                      onDelete: () => _confirmerSuppression(tour),
+                    ),
+                    const SizedBox(height: AppDimensions.spacingSm),
+                  ],
+              ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Carte "commande" de la liste — Modernisation visuelle (12/09/2026,
+/// maquette v0.dev). Volontairement PAS reproduit : le nom de
+/// boutique/client de la maquette ("Boutique Dakar Centre") — aucune
+/// donnée de ce type n'existe dans `Tour` ni dans l'import PDF (voir
+/// `Tour`, `pdf_photo_extractor.dart`) ; l'inventer aurait affiché un faux
+/// nom de magasin à l'écran. `Reçue à HH:mm` (issu de `dateCreation`),
+/// lui, est une vraie donnée déjà disponible.
+class _TourCard extends StatelessWidget {
+  const _TourCard({
+    required this.tour,
+    required this.isDownloading,
+    required this.onOpen,
+    required this.onDownload,
+    required this.onDelete,
+  });
+
+  final Tour tour;
+  final bool isDownloading;
+  final VoidCallback onOpen;
+  final VoidCallback onDownload;
+  final VoidCallback onDelete;
+
+  String _heure(DateTime date) {
+    final two = (int n) => n.toString().padLeft(2, '0');
+    return '${two(date.hour)}:${two(date.minute)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, bg, fg) = TourStatusBadge.appearanceFor(tour.statut);
+    final progression = tour.nombreTotalProduits == 0
+        ? 0.0
+        : tour.produitsTraites / tour.nombreTotalProduits;
+
+    return Card(
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(AppDimensions.cornerRadius),
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(tour.numeroTournee, style: AppTypography.sectionTitle),
+                  ),
+                  StatusPill(label: label, background: bg, foreground: fg),
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    color: AppColors.neutral,
+                    tooltip: 'Supprimer la commande',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.inventory_2_outlined, size: 15, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text('${tour.nombreTotalProduits} produits', style: AppTypography.secondaryLabel),
+                  const SizedBox(width: AppDimensions.spacingMd),
+                  const Icon(Icons.schedule, size: 15, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text('Reçue à ${_heure(tour.dateCreation)}', style: AppTypography.secondaryLabel),
+                ],
+              ),
+              if (tour.estTeleChargeeLocalement) ...[
+                const SizedBox(height: AppDimensions.spacingSm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${tour.produitsTraites}/${tour.nombreTotalProduits} validés',
+                        style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Text(
+                      '${(progression * 100).round()}%',
+                      style: AppTypography.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.spacingXs),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusPill),
+                  child: LinearProgressIndicator(
+                    value: progression,
+                    minHeight: 8,
+                    backgroundColor: AppColors.surfaceAlt,
+                    color: tour.statut == TourStatus.terminee ? AppColors.success : null,
+                  ),
+                ),
+              ],
+              if (tour.statut != TourStatus.terminee) ...[
+                const SizedBox(height: AppDimensions.spacingSm),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: isDownloading
+                        ? null
+                        : (tour.statut == TourStatus.disponible ? onDownload : onOpen),
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.primarySoft,
+                      foregroundColor: AppColors.primary,
+                    ),
+                    icon: isDownloading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.arrow_forward, size: 18),
+                    label: Text(
+                      switch (tour.statut) {
+                        TourStatus.disponible => 'Télécharger',
+                        TourStatus.telechargee => 'Commencer',
+                        TourStatus.enCours => 'Continuer',
+                        TourStatus.terminee => '',
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

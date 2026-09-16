@@ -6,21 +6,25 @@ import 'package:genesis_picking/features/tours/data/tour_status.dart';
 import '../auth/fake_user_repository.dart';
 import '../courier/fake_courier_repository.dart';
 import '../tours/fake_tour_repository.dart';
+import '../warehouse_location/fake_brand_warehouse_location_repository.dart';
 
 void main() {
   late FakeTourRepository tourRepository;
   late FakeCourierRepository courierRepository;
   late FakeUserRepository userRepository;
+  late FakeBrandWarehouseLocationRepository brandWarehouseLocationRepository;
   late AdministrationService service;
 
   setUp(() async {
     tourRepository = FakeTourRepository();
     courierRepository = FakeCourierRepository();
     userRepository = FakeUserRepository();
+    brandWarehouseLocationRepository = FakeBrandWarehouseLocationRepository();
     service = AdministrationService(
       tourRepository: tourRepository,
       courierRepository: courierRepository,
       userRepository: userRepository,
+      brandWarehouseLocationRepository: brandWarehouseLocationRepository,
     );
 
     await userRepository.create(

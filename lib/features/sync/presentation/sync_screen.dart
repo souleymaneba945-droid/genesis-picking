@@ -31,20 +31,29 @@ class SyncScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _InfoRow(
-                label: 'Dernière synchronisation',
-                value: _formatLastRun(state.lastRun?.finishedAt),
-              ),
-              const SizedBox(height: AppDimensions.spacingMd),
-              _InfoRow(
-                label: 'Éléments en attente',
-                value: '${state.pendingCount}',
-              ),
-              const SizedBox(height: AppDimensions.spacingMd),
-              _InfoRow(
-                label: 'État actuel',
-                value: _currentStateLabel(state),
-                valueColor: _currentStateColor(state),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.cardPadding),
+                  child: Column(
+                    children: [
+                      _InfoRow(
+                        label: 'Dernière synchronisation',
+                        value: _formatLastRun(state.lastRun?.finishedAt),
+                      ),
+                      const Divider(height: AppDimensions.spacingLg),
+                      _InfoRow(
+                        label: 'Éléments en attente',
+                        value: '${state.pendingCount}',
+                      ),
+                      const Divider(height: AppDimensions.spacingLg),
+                      _InfoRow(
+                        label: 'État actuel',
+                        value: _currentStateLabel(state),
+                        valueColor: _currentStateColor(state),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: AppDimensions.spacingXl),
               PrimaryButton(

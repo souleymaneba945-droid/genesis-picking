@@ -43,10 +43,18 @@ class AppTheme {
             AppDimensions.primaryButtonHeight,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusLg),
+            borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusMd),
           ),
           textStyle: AppTypography.buttonLabel,
         ),
+      ),
+      // Modernisation visuelle (12/09/2026) : sans ce thème explicite, un
+      // FAB prend par défaut la couleur "tertiary" dérivée de la seed —
+      // un violet ne portant aucun sens métier, jamais utilisé nulle part
+      // ailleurs dans l'app (repéré sur "Ma tournée"/"Importer").
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -55,13 +63,44 @@ class AppTheme {
           ),
           side: const BorderSide(color: AppColors.divider),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusLg),
+            borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusMd),
           ),
           textStyle: AppTypography.buttonLabel,
         ),
       ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+      ),
+      // Modernisation visuelle (13/09/2026) : un seul thème pour TOUS les
+      // champs de saisie de l'app (`TextField`/`TextFormField`/
+      // `DropdownButtonFormField`) — fond `background`, bordure fine
+      // `divider`, bordure `primary` au focus, coins arrondis
+      // [AppDimensions.cornerRadiusMd] — plutôt que de retoucher chaque
+      // écran de formulaire un par un (`CreateUserScreen`,
+      // `RenameIdentifiantDialog`, `CreateBrandLocationScreen`...).
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.background,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spacingMd,
+          vertical: AppDimensions.spacingMd,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusMd),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusMd),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusMd),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusMd),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
       ),
       // Refonte UI — cartes sans bordure dure, ombre très légère, coins
       // largement arrondis : c'est ce qui remplace visuellement les

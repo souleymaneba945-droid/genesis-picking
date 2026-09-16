@@ -70,7 +70,6 @@ class _ResetPasswordDialogState extends ConsumerState<ResetPasswordDialog> {
         obscureText: true,
         decoration: const InputDecoration(
           labelText: 'Nouveau mot de passe',
-          border: OutlineInputBorder(),
         ),
       ),
       actionsPadding: const EdgeInsets.all(AppDimensions.spacingMd),

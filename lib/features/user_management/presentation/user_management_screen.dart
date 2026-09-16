@@ -9,6 +9,7 @@ import 'package:genesis_picking/core/widgets/feedback/app_snackbar.dart';
 import 'package:genesis_picking/features/auth/auth_providers.dart';
 import 'package:genesis_picking/features/auth/data/user_account.dart';
 import 'package:genesis_picking/features/user_management/presentation/create_user_screen.dart';
+import 'package:genesis_picking/features/user_management/presentation/rename_identifiant_dialog.dart';
 import 'package:genesis_picking/features/user_management/presentation/reset_password_dialog.dart';
 
 /// Onglet "Utilisateurs" de l'Administrateur (Refonte UI) — écran 4.14 du
@@ -68,6 +69,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     );
   }
 
+  Future<void> _openRenameIdentifiant(UserAccount user) async {
+    final renomme = await showDialog<bool>(
+      context: context,
+      builder: (_) => RenameIdentifiantDialog(user: user),
+    );
+    if (renomme == true) _refresh();
+  }
+
   Future<void> _openCreateUser() async {
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const CreateUserScreen()),
@@ -121,6 +130,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     user: user,
                     onToggleActive: () => _toggleActive(user),
                     onResetPassword: () => _openResetPassword(user),
+                    onRenameIdentifiant: () => _openRenameIdentifiant(user),
                   ),
                   const SizedBox(height: AppDimensions.spacingSm),
                 ],
@@ -137,11 +147,13 @@ class _UserCard extends StatelessWidget {
     required this.user,
     required this.onToggleActive,
     required this.onResetPassword,
+    required this.onRenameIdentifiant,
   });
 
   final UserAccount user;
   final VoidCallback onToggleActive;
   final VoidCallback onResetPassword;
+  final VoidCallback onRenameIdentifiant;
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +187,7 @@ class _UserCard extends StatelessWidget {
               onSelected: (value) {
                 if (value == 'toggle') onToggleActive();
                 if (value == 'reset') onResetPassword();
+                if (value == 'rename') onRenameIdentifiant();
               },
               itemBuilder: (context) => [
                 PopupMenuItem(
@@ -184,6 +197,10 @@ class _UserCard extends StatelessWidget {
                 const PopupMenuItem(
                   value: 'reset',
                   child: Text('Réinitialiser le mot de passe'),
+                ),
+                const PopupMenuItem(
+                  value: 'rename',
+                  child: Text('Renommer l\'identifiant'),
                 ),
               ],
             ),

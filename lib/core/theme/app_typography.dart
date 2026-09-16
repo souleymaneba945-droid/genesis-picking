@@ -78,4 +78,24 @@ class AppTypography {
     letterSpacing: 0.6,
     color: AppColors.textSecondary,
   );
+
+  /// Titre de section au sein d'un écran (ex. "Commande en cours",
+  /// "Assigner à un coursier") — plus discret que [screenTitle], plus
+  /// affirmé que [body] (Modernisation visuelle, 12/09/2026).
+  static const TextStyle sectionTitle = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
+
+  /// Prénom de la salutation d'accueil ("Souleymane 👋") — volontairement
+  /// distinct de [screenTitle] : même taille, mais une graisse encore plus
+  /// marquée (Modernisation visuelle, 12/09/2026).
+  static const TextStyle greetingName = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+  );
 }

@@ -4,6 +4,7 @@ import 'package:genesis_picking/core/providers/core_providers.dart';
 import 'package:genesis_picking/core/theme/app_colors.dart';
 import 'package:genesis_picking/core/theme/app_dimensions.dart';
 import 'package:genesis_picking/core/theme/app_typography.dart';
+import 'package:genesis_picking/core/widgets/status/status_pill.dart';
 import 'package:genesis_picking/features/courier/courier_providers.dart';
 import 'package:genesis_picking/features/courier/data/courier_request.dart';
 import 'package:genesis_picking/features/courier/data/courier_request_status.dart';
@@ -100,14 +101,12 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(request);
+    final (bg, fg) = _pillColors(request);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.cardPadding),
         child: Row(
           children: [
-            Icon(_statusIcon(request.etat), color: color),
-            const SizedBox(width: AppDimensions.spacingMd),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,6 +124,16 @@ class _RequestCard extends StatelessWidget {
                     ),
                 ],
               ),
+            ),
+            const SizedBox(width: AppDimensions.spacingSm),
+            StatusPill(
+              label: request.etat == CourierRequestStatus.terminee ||
+                      request.etat == CourierRequestStatus.traitee
+                  ? 'Traitée'
+                  : 'En attente',
+              background: bg,
+              foreground: fg,
+              icon: _statusIcon(request.etat),
             ),
           ],
         ),
@@ -151,14 +160,17 @@ class _RequestCard extends StatelessWidget {
     };
   }
 
-  Color _statusColor(CourierRequest request) {
+  /// (fond doux, couleur pleine) — un résultat "non retrouvé" prime
+  /// toujours sur le simple état d'avancement (Modernisation visuelle,
+  /// 12/09/2026, mêmes tokens que `TourStatusBadge`).
+  (Color, Color) _pillColors(CourierRequest request) {
     if (request.resultat == CourierRequestResult.nonRetrouve) {
-      return AppColors.error;
+      return (AppColors.errorSoft, AppColors.error);
     }
     if (request.etat == CourierRequestStatus.terminee ||
         request.etat == CourierRequestStatus.traitee) {
-      return AppColors.success;
+      return (AppColors.successSoft, AppColors.success);
     }
-    return AppColors.neutral;
+    return (AppColors.surfaceAlt, AppColors.textSecondary);
   }
 }

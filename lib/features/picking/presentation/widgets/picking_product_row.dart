@@ -2,28 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:genesis_picking/core/theme/app_colors.dart';
 import 'package:genesis_picking/core/theme/app_dimensions.dart';
 import 'package:genesis_picking/core/widgets/media/product_thumbnail.dart';
+import 'package:genesis_picking/core/widgets/status/status_pill.dart';
 import 'package:genesis_picking/features/picking/data/picking_product.dart';
 import 'package:genesis_picking/features/picking/data/product_state.dart';
 
-/// Une ligne de la liste de picking : image, quantité, emplacement,
-/// produit, et deux boutons de validation — même disposition que la
-/// picking list papier/PDF déjà utilisée sur le terrain, pour rester
-/// familière tout en ajoutant la validation numérique. Vignette
-/// suffisamment grande pour vraiment reconnaître le produit d'un coup
-/// d'œil (Refonte UI — les photos sont maintenant réellement extraites
-/// du PDF, pas de raison de les afficher minuscules).
+/// Une ligne de la liste de picking : image (badge quantité en coin),
+/// numéro d'ordre + référence, produit, emplacement, et les actions
+/// propres à son état — même disposition que la picking list papier/PDF
+/// déjà utilisée sur le terrain, pour rester familière tout en ajoutant
+/// la validation numérique.
 ///
-/// Vignette agrandie et boutons d'action passés en colonne verticale
-/// (03/09/2026, retour terrain) : trois boutons côte à côte prenaient
-/// beaucoup de largeur pour peu de hauteur — les empiler verticalement
-/// libère cette largeur pour une photo bien plus grande, sans allonger la
-/// ligne au-delà de ce que les boutons empilés occupent déjà en hauteur.
+/// Modernisation visuelle (13/09/2026, maquette v0.dev fournie par
+/// l'utilisateur) : fond teinté selon l'état (vert = validé, rouge =
+/// introuvable, ambre = envoyé au coursier), badge quantité directement
+/// sur la vignette au lieu d'une colonne séparée, actions en boutons ronds
+/// horizontaux plutôt qu'empilés verticalement — l'agrandissement de la
+/// vignette du 03/09/2026 (retour terrain) reste respecté : la vignette
+/// garde une taille confortable, seule la disposition des boutons change.
 class PickingProductRow extends StatelessWidget {
   const PickingProductRow({
     required this.produit,
     required this.onValider,
     required this.onIntrouvable,
     required this.onEnvoyerCoursier,
+    required this.onAnnuler,
     super.key,
   });
 
@@ -36,194 +38,295 @@ class PickingProductRow extends StatelessWidget {
   /// plus que constater "pas encore trouvé", sans déclencher d'envoi).
   final VoidCallback onEnvoyerCoursier;
 
-  bool get _estTraite => produit.etat != ProductState.aRecuperer;
+  /// Annule une validation faite par erreur ("Annuler"/"Réessayer" selon
+  /// l'état, retour terrain 13/09/2026) — remet la ligne à "à récupérer".
+  /// Toujours fourni par l'appelant, mais jamais affiché par
+  /// [_TrailingAction] pour [ProductState.envoyeAuCoursier] : une demande
+  /// coursier existe déjà à ce stade, l'annuler ici ne l'annulerait pas
+  /// côté coursier (voir `PickingController.annulerValidation`).
+  final void Function(String productLineId) onAnnuler;
+
+  (Color, BoxBorder?) get _apparenceFond => switch (produit.etat) {
+        ProductState.collecte ||
+        ProductState.partiellementCollecte =>
+          (AppColors.successSoft, null),
+        ProductState.introuvable => (AppColors.errorSoft, null),
+        ProductState.envoyeAuCoursier => (AppColors.warningSoft, null),
+        ProductState.aRecuperer => (
+            AppColors.surface,
+            Border.all(color: AppColors.divider),
+          ),
+      };
 
   @override
   Widget build(BuildContext context) {
+    final (fond, bordure) = _apparenceFond;
+
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.spacingSm,
-        vertical: AppDimensions.spacingSm,
-      ),
+      padding: const EdgeInsets.all(AppDimensions.spacingSm),
       decoration: BoxDecoration(
-        color: _estTraite ? Colors.transparent : AppColors.background,
+        color: fond,
         borderRadius: BorderRadius.circular(AppDimensions.cornerRadius),
+        border: bordure,
       ),
-      child: Opacity(
-        opacity: _estTraite ? 0.5 : 1,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Center(
-              child: ProductThumbnail(imageUrl: produit.imageUrl, taille: 88),
-            ),
-            const SizedBox(width: AppDimensions.spacingSm),
-            SizedBox(
-              width: 20,
-              child: Text(
-                '${produit.quantiteDemandee}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            SizedBox(
-              width: 34,
-              child: Text(
-                produit.emplacement,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.neutral,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppDimensions.spacingXs),
-            Expanded(
-              // Même contenu que la cellule "Produit" de la picking list
-              // PDF : la référence (SKU - code-barres) au-dessus du nom —
-              // sans aucune troncature (ni maxLines ni ellipsis) : le
-              // préparateur/coursier s'appuie sur ce texte en entier pour
-              // identifier le produit, une référence coupée est inutile.
-              // La ligne s'agrandit verticalement autant que nécessaire.
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (produit.description != null &&
-                      produit.description!.isNotEmpty)
-                    Text(
-                      produit.description!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.neutral,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  Text(
-                    produit.nom,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppDimensions.spacingSm),
-            _estTraite ? _StatusIcon(etat: produit.etat) : _ActionButtons(
-              onValider: onValider,
-              onIntrouvable: onIntrouvable,
-              onEnvoyerCoursier: onEnvoyerCoursier,
-            ),
-          ],
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _ThumbnailWithBadge(imageUrl: produit.imageUrl, quantite: produit.quantiteDemandee),
+          const SizedBox(width: AppDimensions.spacingSm),
+          Expanded(child: _ProductInfo(produit: produit)),
+          const SizedBox(width: AppDimensions.spacingSm),
+          _TrailingAction(
+            produit: produit,
+            onValider: onValider,
+            onIntrouvable: onIntrouvable,
+            onEnvoyerCoursier: onEnvoyerCoursier,
+            onAnnuler: () => onAnnuler(produit.id),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ActionButtons extends StatelessWidget {
-  const _ActionButtons({
-    required this.onValider,
-    required this.onIntrouvable,
-    required this.onEnvoyerCoursier,
-  });
+/// Vignette produit avec la quantité demandée en badge sur le coin —
+/// remplace l'ancienne colonne "×N" séparée, pour libérer de la largeur
+/// pour le nom/l'emplacement (maquette v0.dev, 13/09/2026).
+class _ThumbnailWithBadge extends StatelessWidget {
+  const _ThumbnailWithBadge({required this.imageUrl, required this.quantite});
 
-  final VoidCallback onValider;
-  final VoidCallback onIntrouvable;
-  final VoidCallback onEnvoyerCoursier;
+  final String? imageUrl;
+  final int quantite;
 
   @override
   Widget build(BuildContext context) {
-    // Empilés verticalement (voir la docstring de PickingProductRow) —
-    // même taille de bouton qu'avant (34, confortable au doigt), plus
-    // large marge horizontale libérée pour la vignette agrandie.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
+      clipBehavior: Clip.none,
       children: [
-        _RowButton(
-          icon: Icons.close,
-          color: AppColors.error,
-          background: const Color(0xFFFDECEB),
-          onPressed: onIntrouvable,
-          taille: 34,
-        ),
-        const SizedBox(height: 4),
-        _RowButton(
-          icon: Icons.local_shipping_outlined,
-          color: Colors.white,
-          background: AppColors.primary,
-          onPressed: onEnvoyerCoursier,
-          taille: 34,
-        ),
-        const SizedBox(height: 4),
-        _RowButton(
-          icon: Icons.check,
-          color: Colors.white,
-          background: AppColors.success,
-          onPressed: onValider,
-          taille: 34,
+        ProductThumbnail(imageUrl: imageUrl, taille: 64),
+        Positioned(
+          top: -6,
+          left: -6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusPill),
+              border: Border.all(color: AppColors.surface, width: 2),
+            ),
+            child: Text(
+              '×$quantite',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-class _RowButton extends StatelessWidget {
-  const _RowButton({
+/// Numéro d'ordre + référence, nom (barré une fois validé), emplacement —
+/// tout ce qui identifie le produit et où le trouver, jamais tronqué au
+/// point de devenir inutile (Refonte UI historique).
+class _ProductInfo extends StatelessWidget {
+  const _ProductInfo({required this.produit});
+
+  final PickingProduct produit;
+
+  bool get _valide =>
+      produit.etat == ProductState.collecte ||
+      produit.etat == ProductState.partiellementCollecte;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = produit.description;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          description != null && description.isNotEmpty
+              ? '#${produit.ordre} · $description'
+              : '#${produit.ordre}',
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.neutral,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          produit.nom,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            decoration: _valide ? TextDecoration.lineThrough : null,
+            color: _valide ? AppColors.textSecondary : AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textSecondary),
+            const SizedBox(width: 3),
+            Expanded(
+              child: Text(
+                produit.emplacement,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Action de droite — dépend entièrement de l'état du produit : les 3
+/// boutons ronds tant qu'il reste à faire, "Annuler"/"Réessayer" une fois
+/// traité (sauf envoyé au coursier, qui n'a qu'un simple badge).
+class _TrailingAction extends StatelessWidget {
+  const _TrailingAction({
+    required this.produit,
+    required this.onValider,
+    required this.onIntrouvable,
+    required this.onEnvoyerCoursier,
+    required this.onAnnuler,
+  });
+
+  final PickingProduct produit;
+  final VoidCallback onValider;
+  final VoidCallback onIntrouvable;
+  final VoidCallback onEnvoyerCoursier;
+  final VoidCallback onAnnuler;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (produit.etat) {
+      ProductState.aRecuperer => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _RoundButton(
+              icon: Icons.local_shipping_outlined,
+              color: Colors.white,
+              background: AppColors.primary,
+              onPressed: onEnvoyerCoursier,
+            ),
+            const SizedBox(width: 6),
+            _RoundButton(
+              icon: Icons.close,
+              color: AppColors.error,
+              background: AppColors.errorSoft,
+              onPressed: onIntrouvable,
+            ),
+            const SizedBox(width: 6),
+            _RoundButton(
+              icon: Icons.check,
+              color: Colors.white,
+              background: AppColors.success,
+              onPressed: onValider,
+            ),
+          ],
+        ),
+      ProductState.collecte ||
+      ProductState.partiellementCollecte =>
+        _TextActionButton(
+          icon: Icons.replay,
+          label: 'Annuler',
+          color: AppColors.success,
+          onPressed: onAnnuler,
+        ),
+      ProductState.introuvable => _TextActionButton(
+          icon: Icons.replay,
+          label: 'Réessayer',
+          color: AppColors.error,
+          onPressed: onAnnuler,
+        ),
+      ProductState.envoyeAuCoursier => const StatusPill(
+          label: 'Envoyé',
+          background: AppColors.warningSoft,
+          foreground: AppColors.warningText,
+          icon: Icons.local_shipping_outlined,
+        ),
+    };
+  }
+}
+
+class _RoundButton extends StatelessWidget {
+  const _RoundButton({
     required this.icon,
     required this.color,
     required this.background,
     required this.onPressed,
-    this.taille = 40,
   });
 
   final IconData icon;
   final Color color;
   final Color background;
   final VoidCallback onPressed;
-  final double taille;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: background,
-      borderRadius: BorderRadius.circular(8),
+      shape: const CircleBorder(),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        customBorder: const CircleBorder(),
         onTap: onPressed,
-        child: SizedBox(
-          width: taille,
-          height: taille,
-          child: Icon(icon, color: color, size: 20),
-        ),
+        child: SizedBox(width: 36, height: 36, child: Icon(icon, color: color, size: 18)),
       ),
     );
   }
 }
 
-class _StatusIcon extends StatelessWidget {
-  const _StatusIcon({required this.etat});
+/// Bouton "Annuler"/"Réessayer" — remplace l'ancienne icône de statut
+/// tapable par un vrai bouton étiqueté (retour terrain, 13/09/2026) :
+/// plus visible, plus explicite que "juste une icône qu'on peut taper".
+class _TextActionButton extends StatelessWidget {
+  const _TextActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onPressed,
+  });
 
-  final ProductState etat;
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = switch (etat) {
-      ProductState.collecte => (Icons.check_circle, AppColors.success),
-      ProductState.partiellementCollecte => (
-          Icons.check_circle_outline,
-          AppColors.warning,
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusPill),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusPill),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+            ],
+          ),
         ),
-      ProductState.introuvable => (Icons.close, AppColors.error),
-      ProductState.envoyeAuCoursier => (
-          Icons.local_shipping_outlined,
-          AppColors.warning,
-        ),
-      ProductState.aRecuperer => (Icons.circle_outlined, AppColors.neutral),
-    };
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: Icon(icon, color: color),
+      ),
     );
   }
 }

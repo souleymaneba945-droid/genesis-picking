@@ -1,33 +1,39 @@
 import 'package:genesis_picking/core/errors/app_exception.dart';
 import 'package:genesis_picking/core/errors/result.dart';
 import 'package:genesis_picking/core/session/user_role.dart';
+import 'package:genesis_picking/features/administration/domain/brand_request_stats.dart';
 import 'package:genesis_picking/features/auth/data/user_repository.dart';
 import 'package:genesis_picking/features/courier/data/courier_repository.dart';
 import 'package:genesis_picking/features/courier/data/courier_request.dart';
 import 'package:genesis_picking/features/tours/data/tour.dart';
 import 'package:genesis_picking/features/tours/data/tour_repository.dart';
 import 'package:genesis_picking/features/tours/data/tour_status.dart';
+import 'package:genesis_picking/features/warehouse_location/data/brand_warehouse_location.dart';
+import 'package:genesis_picking/features/warehouse_location/data/brand_warehouse_location_repository.dart';
 
 /// Service métier de l'Administration.
 ///
 /// Ne fait qu'AGRÉGER et ORCHESTRER des lectures/actions déjà exposées
 /// par les dépôts des autres modules (`TourRepository`, `CourierRepository`,
-/// `UserRepository`) — aucune règle de picking, de collecte ou de
-/// traitement coursier n'est reproduite ici. Les seules actions d'écriture
-/// sont la réassignation d'une tournée et la gestion des comptes (déjà
-/// livrée au Module 2, inchangée).
+/// `UserRepository`, `BrandWarehouseLocationRepository`) — aucune règle de
+/// picking, de collecte ou de traitement coursier n'est reproduite ici.
+/// Les seules actions d'écriture sont la réassignation d'une tournée et la
+/// gestion des comptes (déjà livrée au Module 2, inchangée).
 class AdministrationService {
   AdministrationService({
     required TourRepository tourRepository,
     required CourierRepository courierRepository,
     required UserRepository userRepository,
+    required BrandWarehouseLocationRepository brandWarehouseLocationRepository,
   })  : _tourRepository = tourRepository,
         _courierRepository = courierRepository,
-        _userRepository = userRepository;
+        _userRepository = userRepository,
+        _brandWarehouseLocationRepository = brandWarehouseLocationRepository;
 
   final TourRepository _tourRepository;
   final CourierRepository _courierRepository;
   final UserRepository _userRepository;
+  final BrandWarehouseLocationRepository _brandWarehouseLocationRepository;
 
   /// Vue d'ensemble (Cahier des charges, écran 4.13) : toutes les
   /// tournées non terminées, les plus récentes en premier.
@@ -53,6 +59,33 @@ class AdministrationService {
   /// récentes en premier.
   Future<List<CourierRequest>> toutesLesDemandes() {
     return _courierRepository.listAll();
+  }
+
+  /// Statistiques des demandes coursier regroupées par marque (Module 5
+  /// v2, Rubrique 4bis, 16/09/2026) — objectif : repérer les marques qui
+  /// manquent le plus souvent en rayon, pour décider d'augmenter leur
+  /// stock ou de repriorité leur emplacement (voir `BrandRequestStat`).
+  /// Se contente de charger les deux listes déjà exposées ailleurs
+  /// ([toutesLesDemandes], `BrandWarehouseLocationRepository.listAll`) —
+  /// tout le calcul vit dans [computeBrandRequestStats], une fonction
+  /// pure testable sans dépôt.
+  Future<List<BrandRequestStat>> statistiquesParMarque() async {
+    final demandes = await toutesLesDemandes();
+    final marques = await _brandWarehouseLocationRepository.listAll();
+    return computeBrandRequestStats(demandes, marques);
+  }
+
+  /// Charge les deux listes nécessaires aux statistiques SANS les agréger
+  /// (contrairement à [statistiquesParMarque]) — utilisé par l'écran
+  /// jour/semaine/mois, qui doit filtrer [demandes] par période PUIS
+  /// appeler [computeBrandRequestStats], jamais l'inverse. Un seul
+  /// chargement réseau/local, ensuite tout le filtrage par période se
+  /// fait en mémoire (navigation instantanée entre les périodes).
+  Future<({List<CourierRequest> demandes, List<BrandWarehouseLocation> marques})>
+      chargerDonneesStatistiquesMarque() async {
+    final demandes = await toutesLesDemandes();
+    final marques = await _brandWarehouseLocationRepository.listAll();
+    return (demandes: demandes, marques: marques);
   }
 
   /// [historiqueTournees], enrichi du nom du préparateur qui a réalisé

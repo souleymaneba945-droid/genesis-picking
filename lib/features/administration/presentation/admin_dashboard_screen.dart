@@ -4,10 +4,11 @@ import 'package:genesis_picking/core/errors/error_handler.dart';
 import 'package:genesis_picking/core/theme/app_dimensions.dart';
 import 'package:genesis_picking/core/theme/app_typography.dart';
 import 'package:genesis_picking/core/widgets/feedback/app_snackbar.dart';
+import 'package:genesis_picking/core/widgets/status/status_pill.dart';
 import 'package:genesis_picking/features/administration/administration_providers.dart';
 import 'package:genesis_picking/features/import/presentation/import_tour_screen.dart';
 import 'package:genesis_picking/features/tours/data/tour.dart';
-import 'package:genesis_picking/features/tours/data/tour_status.dart';
+import 'package:genesis_picking/features/tours/presentation/widgets/tour_status_badge.dart';
 
 /// Onglet "Tournées" de l'Administrateur (Refonte UI) — tournées non
 /// terminées, avec réassignation, plus l'accès à l'import (Cahier des
@@ -157,6 +158,7 @@ class _TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final (label, bg, fg) = TourStatusBadge.appearanceFor(tour.statut);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.cardPadding),
@@ -166,13 +168,19 @@ class _TourCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    tour.numeroTournee,
-                    style: AppTypography.body.copyWith(fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          tour.numeroTournee,
+                          style: AppTypography.body.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      StatusPill(label: label, background: bg, foreground: fg),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_statusLabel(tour.statut)} · '
                     '${tour.produitsTraites}/${tour.nombreTotalProduits} produits',
                     style: AppTypography.secondaryLabel,
                   ),
@@ -184,14 +192,5 @@ class _TourCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _statusLabel(TourStatus statut) {
-    return switch (statut) {
-      TourStatus.disponible => 'Disponible',
-      TourStatus.telechargee => 'Téléchargée',
-      TourStatus.enCours => 'En cours',
-      TourStatus.terminee => 'Terminée',
-    };
   }
 }

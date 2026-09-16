@@ -119,6 +119,34 @@ class PickingController extends FamilyAsyncNotifier<PickingSession, String> {
     );
   }
 
+  /// Annule une validation faite par erreur (retour terrain, 13/09/2026) —
+  /// remet le produit à [ProductState.aRecuperer], exactement comme s'il
+  /// n'avait jamais été traité. Le service/dépôt sous-jacents supportaient
+  /// déjà cette transition (voir `PickingService._messagePourValidation`,
+  /// cas `aRecuperer` = "remis à collecter", jamais exploité jusqu'ici) —
+  /// aucun changement de couche donnée nécessaire, seulement ce point
+  /// d'entrée.
+  ///
+  /// Volontairement PAS proposé pour [ProductState.envoyeAuCoursier]
+  /// (voir `PickingProductRow` — aucun bouton d'annulation sur cet état) :
+  /// une demande coursier a déjà été créée à ce stade (Module 5), et ce
+  /// simple retour à `aRecuperer` ne l'annulerait pas — le coursier
+  /// continuerait de voir une demande pour un produit que le préparateur
+  /// croit avoir "dé-envoyé".
+  Future<void> annulerValidation(String productLineId) async {
+    final result = await _service.validateCurrentProduct(
+      tourId: arg,
+      productLineId: productLineId,
+      etat: ProductState.aRecuperer,
+    );
+
+    result.when(
+      success: (newSession) => state = AsyncValue.data(newSession),
+      failure: (exception) =>
+          state = AsyncValue.error(exception, StackTrace.current),
+    );
+  }
+
   /// Ajouté au Module 5 — méthode strictement additive, aucune méthode
   /// existante de ce contrôleur n'est modifiée.
   ///

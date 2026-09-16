@@ -200,6 +200,37 @@ void main() {
         failure: (_) => fail('devrait réussir'),
       );
     });
+
+    test(
+      'revalider avec l\'état aRecuperer annule une validation faite par '
+      'erreur (retour terrain, 13/09/2026) — remet le produit "à faire", '
+      'redevient le produit courant, la progression redescend',
+      () async {
+        await service.openSession(_tourId);
+        await service.validateCurrentProduct(
+          tourId: _tourId,
+          productLineId: 'p1',
+          etat: ProductState.collecte,
+          quantiteCollectee: 3,
+        );
+
+        final result = await service.validateCurrentProduct(
+          tourId: _tourId,
+          productLineId: 'p1',
+          etat: ProductState.aRecuperer,
+        );
+
+        result.when(
+          success: (session) {
+            final p1 = session.produits.firstWhere((p) => p.id == 'p1');
+            expect(p1.etat, ProductState.aRecuperer);
+            expect(session.produitCourant?.id, 'p1');
+            expect(session.progression.traites, 0);
+          },
+          failure: (_) => fail('devrait réussir'),
+        );
+      },
+    );
   });
 
   group('PickingService — Historique d\'activité', () {

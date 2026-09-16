@@ -35,6 +35,16 @@ abstract interface class UserRepository {
     required String nouveauMotDePasse,
   });
 
+  /// Renomme l'identifiant de connexion d'un compte existant (Module 5
+  /// v2, Rubrique 3) — échoue si [nouvelIdentifiant] est déjà utilisé par
+  /// un autre compte (même vérification qu'à la création). [userId] reste
+  /// inchangé : seul l'identifiant de connexion change, jamais l'identité
+  /// technique du compte (ce qui le lie à ses tournées/demandes passées).
+  Future<Result<void>> renameIdentifiant({
+    required String userId,
+    required String nouvelIdentifiant,
+  });
+
   /// Vrai si aucun compte n'existe encore (permet à [DatabaseSeeder] de
   /// savoir s'il doit créer le compte administrateur initial).
   Future<bool> isEmpty();

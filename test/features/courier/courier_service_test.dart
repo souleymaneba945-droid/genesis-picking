@@ -417,6 +417,135 @@ void main() {
     });
   });
 
+  group(
+    'CourierService.openGroup / respondToGroup / deleteGroup — Module 5 v2, '
+    'Rubrique 1 (liste fusionnée)',
+    () {
+      const secondProductLineId = 'p2';
+      const secondPreparateurId = 'prep-2';
+
+      setUp(() {
+        // Même référence que _productLineId ("SKU-4821 - 3401590123456"),
+        // mais une ligne produit DIFFÉRENTE (une autre tournée) — simule
+        // deux préparateurs signalant le même produit physique, chacun
+        // depuis sa propre tournée.
+        productRepository.seed(
+          const PickingProduct(
+            id: secondProductLineId,
+            tourId: 'tour-2',
+            ordre: 1,
+            nom: 'Savon Kojie San',
+            description: 'SKU-4821 - 3401590123456',
+            quantiteDemandee: 2,
+            emplacement: 'Rayon B7',
+            etat: ProductState.introuvable,
+            imageUrl: 'https://cdn.example.com/kojie-san.jpg',
+          ),
+        );
+      });
+
+      Future<(String, String)> deuxDemandesMemeProduit() async {
+        final coursierId = await coursierId0();
+        final preparateurId = await preparateurAccountId();
+
+        final r1 = await service.createRequest(
+          preparateurId: preparateurId,
+          coursierId: coursierId,
+          tourId: _tourId,
+          productLineId: _productLineId,
+          quantiteDemandee: 3,
+          emplacement: 'Rayon A2',
+        );
+        final r2 = await service.createRequest(
+          preparateurId: secondPreparateurId,
+          coursierId: coursierId,
+          tourId: 'tour-2',
+          productLineId: secondProductLineId,
+          quantiteDemandee: 2,
+          emplacement: 'Rayon B7',
+        );
+
+        return (
+          r1.when(success: (r) => r.id, failure: (_) => fail('devrait réussir')),
+          r2.when(success: (r) => r.id, failure: (_) => fail('devrait réussir')),
+        );
+      }
+
+      test(
+        'openGroup ouvre les deux demandes du groupe, chacune passe à '
+        '"Acceptée"',
+        () async {
+          final (id1, id2) = await deuxDemandesMemeProduit();
+
+          final result = await service.openGroup([id1, id2]);
+
+          result.when(
+            success: (vues) {
+              expect(vues, hasLength(2));
+              expect(
+                vues.every((v) => v.request.etat == CourierRequestStatus.acceptee),
+                isTrue,
+              );
+            },
+            failure: (_) => fail('devrait réussir'),
+          );
+        },
+      );
+
+      test(
+        'respondToGroup répond aux deux demandes en un seul appel, chacune '
+        'garde son propre horodatage',
+        () async {
+          final (id1, id2) = await deuxDemandesMemeProduit();
+          await service.openGroup([id1, id2]);
+
+          final result = await service.respondToGroup(
+            requestIds: [id1, id2],
+            resultat: CourierRequestResult.retrouve,
+          );
+
+          expect(result.isSuccess, isTrue);
+          final req1 = await courierRepository.findById(id1);
+          final req2 = await courierRepository.findById(id2);
+          expect(req1!.etat, CourierRequestStatus.traitee);
+          expect(req2!.etat, CourierRequestStatus.traitee);
+          expect(req1.dateTraitement, isNotNull);
+          expect(req2.dateTraitement, isNotNull);
+        },
+      );
+
+      test(
+        'respondToGroup réussit même si une des demandes du groupe a '
+        'disparu entre-temps — n\'échoue que si AUCUNE ne peut être '
+        'résolue',
+        () async {
+          final (id1, id2) = await deuxDemandesMemeProduit();
+          await service.openGroup([id1, id2]);
+          await service.deleteRequest(id2); // simule une disparition
+
+          final result = await service.respondToGroup(
+            requestIds: [id1, id2],
+            resultat: CourierRequestResult.retrouve,
+          );
+
+          expect(result.isSuccess, isTrue);
+          final req1 = await courierRepository.findById(id1);
+          expect(req1!.etat, CourierRequestStatus.traitee);
+        },
+      );
+
+      test('deleteGroup supprime les deux demandes du groupe', () async {
+        final (id1, id2) = await deuxDemandesMemeProduit();
+
+        final result = await service.deleteGroup([id1, id2]);
+
+        expect(result.isSuccess, isTrue);
+        expect(await courierRepository.findById(id1), isNull);
+        expect(await courierRepository.findById(id2), isNull);
+      });
+    },
+  );
+
   group('CourierService — Historique d\'activité', () {
     test('répondre "retrouvé" dépose une entrée de succès pour le coursier',
         () async {
