@@ -153,7 +153,7 @@ List<List<String>> _lireCsv(Uint8List bytes, String fileName) {
 /// source v0.dev, qui reconnaît `;`, `,` et la tabulation).
 String _detecterDelimiteur(String content) {
   final premiereLigne = content.split(RegExp(r'\r?\n')).first;
-  final compte = (String sep) => premiereLigne.split(sep).length - 1;
+  int compte(String sep) => premiereLigne.split(sep).length - 1;
   final candidats = {';': compte(';'), ',': compte(','), '\t': compte('\t')};
   var meilleur = ',';
   var meilleurCompte = 0;

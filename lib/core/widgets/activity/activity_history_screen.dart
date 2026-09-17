@@ -149,7 +149,7 @@ class _ActivityTile extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${two(date.day)}/${two(date.month)}/${date.year} à '
         '${two(date.hour)}:${two(date.minute)}';
   }

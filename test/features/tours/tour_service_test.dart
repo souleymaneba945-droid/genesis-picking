@@ -124,7 +124,7 @@ void main() {
         tourId: 'tour-invalide',
         numeroTournee: 'T-2026-0098',
         preparateurId: 'prep-1',
-        produits: const [
+        produits: [
           TourProductPayload(
             ordre: 1,
             nom: 'Produit sans quantité',
@@ -213,8 +213,7 @@ void main() {
       );
     });
 
-    test('une reprise ne modifie jamais dateDebut déjà enregistrée',
-        () async {
+    test('une reprise ne modifie jamais dateDebut déjà enregistrée', () async {
       await service.downloadTour('tour-1');
       final premier = await service.startOrResume('tour-1');
       final dateDebutOriginale = premier.when(
@@ -247,7 +246,8 @@ void main() {
   });
 
   group('TourService — mesure de la durée réelle de picking', () {
-    test('la clôture enregistre dateFin, et dureeEcoulee reflète le temps '
+    test(
+        'la clôture enregistre dateFin, et dureeEcoulee reflète le temps '
         'écoulé depuis dateDebut', () async {
       await service.downloadTour('tour-1');
       await service.startOrResume('tour-1');

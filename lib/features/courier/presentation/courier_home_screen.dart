@@ -93,7 +93,8 @@ class _CourierRequestsTabState extends ConsumerState<CourierRequestsTab> {
         ),
         data: (requests) {
           final filtered = requests
-              .where((r) => _etatsClos.contains(r.request.etat) == widget.historique)
+              .where((r) =>
+                  _etatsClos.contains(r.request.etat) == widget.historique)
               .toList();
           // Filtrage (ouvertes/closes) TOUJOURS avant fusion : une demande
           // encore ouverte d'un préparateur ne doit jamais se retrouver
@@ -107,8 +108,11 @@ class _CourierRequestsTabState extends ConsumerState<CourierRequestsTab> {
           // propres à cet onglet, les tuiles rappellent le total sur les
           // deux onglets à la fois (elles ne changent donc pas selon
           // qu'on est sur "Demandes" ou "Historique").
-          final aVerifier = requests.where((r) => !_etatsClos.contains(r.request.etat)).length;
-          final traitees = requests.where((r) => _etatsClos.contains(r.request.etat)).length;
+          final aVerifier = requests
+              .where((r) => !_etatsClos.contains(r.request.etat))
+              .length;
+          final traitees =
+              requests.where((r) => _etatsClos.contains(r.request.etat)).length;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -125,9 +129,11 @@ class _CourierRequestsTabState extends ConsumerState<CourierRequestsTab> {
                     height: 44,
                     decoration: BoxDecoration(
                       color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(AppDimensions.cornerRadius),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.cornerRadius),
                     ),
-                    child: const Icon(Icons.local_shipping_outlined, color: AppColors.primary),
+                    child: const Icon(Icons.local_shipping_outlined,
+                        color: AppColors.primary),
                   ),
                   const SizedBox(width: AppDimensions.spacingSm),
                   Expanded(
@@ -162,7 +168,8 @@ class _CourierRequestsTabState extends ConsumerState<CourierRequestsTab> {
                       value: '$aVerifier',
                       label: 'À vérifier',
                       icon: Icons.inventory_2_outlined,
-                      color: aVerifier > 0 ? AppColors.warning : AppColors.success,
+                      color:
+                          aVerifier > 0 ? AppColors.warning : AppColors.success,
                     ),
                   ),
                   const SizedBox(width: AppDimensions.spacingMd),
@@ -202,7 +209,9 @@ class _CourierRequestsTabState extends ConsumerState<CourierRequestsTab> {
                         ),
                       );
                       if (context.mounted) {
-                        await ref.read(courierControllerProvider.notifier).refresh();
+                        await ref
+                            .read(courierControllerProvider.notifier)
+                            .refresh();
                       }
                     },
                   ),
@@ -262,7 +271,8 @@ class _MergedRequestCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  ProductThumbnail(imageUrl: groupe.produitImageUrl, taille: 48),
+                  ProductThumbnail(
+                      imageUrl: groupe.produitImageUrl, taille: 48),
                   const SizedBox(width: AppDimensions.spacingSm),
                   Expanded(
                     // Même contenu, dans le même ordre, que la cellule
@@ -291,10 +301,12 @@ class _MergedRequestCard extends StatelessWidget {
                   if (groupe.requests.length > 1) ...[
                     const SizedBox(width: AppDimensions.spacingSm),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceAlt,
-                        borderRadius: BorderRadius.circular(AppDimensions.cornerRadiusPill),
+                        borderRadius: BorderRadius.circular(
+                            AppDimensions.cornerRadiusPill),
                       ),
                       child: Text(
                         '${groupe.requests.length} préparateurs',
@@ -312,7 +324,8 @@ class _MergedRequestCard extends StatelessWidget {
                 padding: const EdgeInsets.all(AppDimensions.spacingSm),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppDimensions.cornerRadius),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.cornerRadius),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +370,7 @@ class _MergedRequestCard extends StatelessWidget {
   }
 
   String _heure(DateTime date) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${two(date.hour)}:${two(date.minute)}';
   }
 
@@ -371,11 +384,16 @@ class _MergedRequestCard extends StatelessWidget {
       CourierRequestStatus.enAttente ||
       CourierRequestStatus.recue =>
         ('En attente', AppColors.surfaceAlt, AppColors.textSecondary),
-      CourierRequestStatus.acceptee =>
-        ('Acceptée', AppColors.primarySoft, AppColors.primary),
-      CourierRequestStatus.traitee ||
-      CourierRequestStatus.terminee =>
-        ('Traitée', AppColors.successSoft, AppColors.success),
+      CourierRequestStatus.acceptee => (
+          'Acceptée',
+          AppColors.primarySoft,
+          AppColors.primary
+        ),
+      CourierRequestStatus.traitee || CourierRequestStatus.terminee => (
+          'Traitée',
+          AppColors.successSoft,
+          AppColors.success
+        ),
     };
   }
 }

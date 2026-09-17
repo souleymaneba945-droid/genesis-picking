@@ -20,8 +20,7 @@ class SyncRunLog {
   final int itemsFailed;
   final String? errorSummary;
 
-  Duration? get duree =>
-      finishedAt == null ? null : finishedAt!.difference(startedAt);
+  Duration? get duree => finishedAt?.difference(startedAt);
 
   bool get estEnCours => finishedAt == null;
 }

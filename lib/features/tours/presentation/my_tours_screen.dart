@@ -273,7 +273,7 @@ class _TourCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   String _heure(DateTime date) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${two(date.hour)}:${two(date.minute)}';
   }
 

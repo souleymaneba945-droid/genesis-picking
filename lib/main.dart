@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genesis_picking/app.dart';
@@ -35,7 +36,13 @@ import 'package:pdfrx/pdfrx.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  AppConfig.initialize(environment: EnvironmentConfig.dev);
+  // `kReleaseMode` est une constante de compilation Flutter (true pour un
+  // `flutter build`, false pour `flutter run`/debug) — évite les logs
+  // verbeux dans un build de production sans dépendre d'un flag à
+  // positionner manuellement (revue Cursor du 16/09/2026).
+  AppConfig.initialize(
+    environment: kReleaseMode ? EnvironmentConfig.prod : EnvironmentConfig.dev,
+  );
   ErrorHandler.initializeGlobalCapture();
   pdfrxFlutterInitialize();
 

@@ -148,6 +148,18 @@ class _DiagnosticScreenState extends ConsumerState<DiagnosticScreen> {
       body: FutureBuilder<List<_DiagnosticItem>>(
         future: _resultsFuture,
         builder: (context, snapshot) {
+          // Chaque test individuel (`_testConnexionServeur`, etc.) capture
+          // déjà sa propre exception et renvoie un `_DiagnosticItem` en
+          // erreur — ce futur ne devrait donc jamais rejeter. Ce cas reste
+          // en filet de sécurité (revue Cursor du 16/09/2026,
+          // §FutureBuilder sans hasError) : sans lui, une exception
+          // imprévue laisserait tourner l'indicateur de chargement
+          // indéfiniment.
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text('Impossible d\'exécuter le diagnostic.'),
+            );
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }

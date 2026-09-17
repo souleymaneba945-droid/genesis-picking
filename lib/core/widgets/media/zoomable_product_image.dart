@@ -98,8 +98,8 @@ class _FullScreenProductImageState extends State<_FullScreenProductImage> {
     }
     final position = details.localPosition;
     _controller.value = Matrix4.identity()
-      ..translate(-position.dx * 1.5, -position.dy * 1.5)
-      ..scale(2.5);
+      ..translateByDouble(-position.dx * 1.5, -position.dy * 1.5, 0, 1)
+      ..scaleByDouble(2.5, 2.5, 2.5, 1);
   }
 
   @override

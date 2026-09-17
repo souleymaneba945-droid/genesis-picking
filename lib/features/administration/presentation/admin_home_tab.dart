@@ -121,7 +121,11 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
                 child: FutureBuilder<List<Tour>>(
                   future: _toursFuture,
                   builder: (context, snapshot) => StatCard(
-                    value: '${snapshot.data?.length ?? '—'}',
+                    // '—' aussi bien pendant le chargement qu'en cas
+                    // d'erreur (jamais un 0 qui laisserait croire à
+                    // "aucune commande" — voir revue Cursor du 16/09/2026,
+                    // §FutureBuilder sans hasError).
+                    value: snapshot.hasError ? '—' : '${snapshot.data?.length ?? '—'}',
                     label: 'Commandes',
                     icon: Icons.assignment_outlined,
                   ),
@@ -132,7 +136,7 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
                 child: FutureBuilder<List<Tour>>(
                   future: _historiqueFuture,
                   builder: (context, snapshot) => StatCard(
-                    value: '${snapshot.data?.length ?? '—'}',
+                    value: snapshot.hasError ? '—' : '${snapshot.data?.length ?? '—'}',
                     label: 'Terminées',
                     icon: Icons.inventory_2_outlined,
                     color: AppColors.success,
@@ -148,6 +152,19 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
                 child: FutureBuilder<List<CourierRequest>>(
                   future: _demandesFuture,
                   builder: (context, snapshot) {
+                    // Jamais un 0 en cas d'échec de chargement : ça
+                    // laisserait croire "aucune vérification active" alors
+                    // que la donnée est simplement indisponible — voir
+                    // revue Cursor du 16/09/2026, §FutureBuilder sans
+                    // hasError.
+                    if (snapshot.hasError) {
+                      return const StatCard(
+                        value: '—',
+                        label: 'Vérifs actives',
+                        icon: Icons.local_shipping_outlined,
+                        color: AppColors.textSecondary,
+                      );
+                    }
                     final ouvertes = (snapshot.data ?? const [])
                         .where(
                           (d) =>
@@ -169,6 +186,14 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
                 child: FutureBuilder<List<CourierRequest>>(
                   future: _demandesFuture,
                   builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const StatCard(
+                        value: '—',
+                        label: 'Introuvables',
+                        icon: Icons.monitor_heart_outlined,
+                        color: AppColors.textSecondary,
+                      );
+                    }
                     final introuvables = (snapshot.data ?? const [])
                         .where((d) => d.resultat == CourierRequestResult.nonRetrouve)
                         .length;
@@ -187,6 +212,10 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
           FutureBuilder<List<Tour>>(
             future: _toursFuture,
             builder: (context, snapshot) {
+              // Erreur ou chargement : pas de carte plutôt qu'une carte à
+              // 0% trompeuse — la tuile "Commandes" ci-dessus porte déjà
+              // le signal d'erreur explicite pour cette même donnée.
+              if (snapshot.hasError) return const SizedBox.shrink();
               final tours = snapshot.data;
               if (tours == null || tours.isEmpty) return const SizedBox.shrink();
               final traites = tours.fold<int>(0, (s, t) => s + t.produitsTraites);
@@ -206,6 +235,16 @@ class _AdminHomeTabState extends ConsumerState<AdminHomeTab> {
           FutureBuilder<List<UserAccount>>(
             future: _usersFuture,
             builder: (context, snapshot) {
+              // Sans ce cas, une erreur laissait tourner
+              // `CircularProgressIndicator()` indéfiniment (`users` reste
+              // `null` pour toujours) — voir revue Cursor du 16/09/2026,
+              // §FutureBuilder sans hasError.
+              if (snapshot.hasError) {
+                return const Text(
+                  'Impossible de charger l\'équipe.',
+                  style: AppTypography.secondaryLabel,
+                );
+              }
               final users = snapshot.data;
               if (users == null) {
                 return const Center(child: CircularProgressIndicator());

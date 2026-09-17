@@ -155,6 +155,12 @@ class _PreparateurHomeTabState extends ConsumerState<PreparateurHomeTab> {
           FutureBuilder<int>(
             future: _demandesEnAttenteFuture,
             builder: (context, snapshot) {
+              // En cas d'erreur, pas de bandeau plutôt qu'un compte à 0
+              // trompeur (voir revue Cursor du 16/09/2026, §FutureBuilder
+              // sans hasError) — ce bandeau reste secondaire, une erreur
+              // silencieuse ici est préférable à un message d'erreur
+              // intrusif pour une simple alerte de confort.
+              if (snapshot.hasError) return const SizedBox.shrink();
               final count = snapshot.data ?? 0;
               if (count == 0) return const SizedBox.shrink();
               return Padding(

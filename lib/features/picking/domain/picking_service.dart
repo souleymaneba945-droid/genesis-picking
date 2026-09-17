@@ -97,11 +97,10 @@ class PickingService {
     return Result.success(_buildSession(tour: tour, produits: produits));
   }
 
-  /// Point d'entrée "Produit introuvable" (Directive, "Produit
-  /// introuvable") : fait uniquement passer le produit à l'état
-  /// [ProductState.introuvable]. L'écran de choix du coursier — et donc
-  /// la transition vers [ProductState.envoyeAuCoursier] — arrive au
-  /// Module 5 ; ce service ne l'implémente pas.
+  /// Point d'entrée "Produit introuvable" : fait uniquement passer le
+  /// produit à l'état [ProductState.introuvable]. Le choix du coursier
+  /// (et la transition vers [ProductState.envoyeAuCoursier]) est géré
+  /// par le module coursier, pas par ce service.
   Future<Result<PickingSession>> markCurrentProductIntrouvable({
     required String tourId,
     required String productLineId,

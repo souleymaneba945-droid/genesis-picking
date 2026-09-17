@@ -5,27 +5,27 @@ import 'package:genesis_picking/core/errors/result.dart';
 void main() {
   group('Result', () {
     test('Success expose la valeur et isSuccess=true', () {
-      final result = Result<int>.success(42);
+      const result = Result<int>.success(42);
       expect(result.isSuccess, isTrue);
       expect(result.isFailure, isFalse);
     });
 
     test('Failure expose isFailure=true', () {
-      final result = Result<int>.failure(const NetworkException('hors ligne'));
+      const result = Result<int>.failure(NetworkException('hors ligne'));
       expect(result.isFailure, isTrue);
       expect(result.isSuccess, isFalse);
     });
 
     test('map transforme la valeur en cas de succès', () {
-      final result = Result<int>.success(2).map((value) => value * 10);
+      final result = const Result<int>.success(2).map((value) => value * 10);
       final value = result.when(success: (v) => v, failure: (_) => -1);
       expect(value, 20);
     });
 
     test('map propage l\'échec sans exécuter la transformation', () {
       var callCount = 0;
-      final result = Result<int>.failure(
-        const StorageException('erreur locale'),
+      final result = const Result<int>.failure(
+        StorageException('erreur locale'),
       ).map((value) {
         callCount++;
         return value * 10;
@@ -35,9 +35,9 @@ void main() {
     });
 
     test('when appelle la bonne branche selon le cas', () {
-      final success = Result<String>.success('ok');
-      final failure = Result<String>.failure(
-        const ValidationException('quantité invalide'),
+      const success = Result<String>.success('ok');
+      const failure = Result<String>.failure(
+        ValidationException('quantité invalide'),
       );
 
       expect(

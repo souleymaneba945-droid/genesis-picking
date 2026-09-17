@@ -50,10 +50,13 @@ class _TourDetailScreenState extends ConsumerState<TourDetailScreen> {
     );
   }
 
-  void _startOrResume() {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => PickingScreen(tourId: _tour.id)))
-        .then((_) => Navigator.of(context).pop());
+  Future<void> _startOrResume() async {
+    final navigator = Navigator.of(context);
+    await navigator.push(
+      MaterialPageRoute(builder: (_) => PickingScreen(tourId: _tour.id)),
+    );
+    if (!mounted) return;
+    navigator.pop();
   }
 
   @override
