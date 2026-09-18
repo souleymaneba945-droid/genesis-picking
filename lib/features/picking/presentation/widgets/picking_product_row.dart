@@ -161,8 +161,11 @@ class _ProductInfo extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           produit.nom,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+          // Jamais tronqué (voir doc de `_ProductInfo`) : un nom de
+          // produit incomplet peut induire en erreur sur le terrain.
+          // Pas de maxLines/overflow — la ligne grandit autant que
+          // nécessaire, même sur un téléphone étroit (retour terrain
+          // 18/09/2026 : noms coupés sur l'app téléphone).
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
